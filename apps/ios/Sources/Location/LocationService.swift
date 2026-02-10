@@ -14,6 +14,8 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     private var locationContinuation: CheckedContinuation<CLLocation, Swift.Error>?
     private var updatesContinuation: AsyncStream<CLLocation>.Continuation?
     private var isStreaming = false
+    private var significantLocationCallback: (@Sendable (CLLocation) -> Void)?
+    private var isMonitoringSignificantChanges = false
 
     override init() {
         super.init()
@@ -142,6 +144,20 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         self.updatesContinuation = nil
     }
 
+    func startMonitoringSignificantLocationChanges(onUpdate: @escaping @Sendable (CLLocation) -> Void) {
+        self.significantLocationCallback = onUpdate
+        guard !self.isMonitoringSignificantChanges else { return }
+        self.isMonitoringSignificantChanges = true
+        self.manager.startMonitoringSignificantLocationChanges()
+    }
+
+    func stopMonitoringSignificantLocationChanges() {
+        guard self.isMonitoringSignificantChanges else { return }
+        self.isMonitoringSignificantChanges = false
+        self.significantLocationCallback = nil
+        self.manager.stopMonitoringSignificantLocationChanges()
+    }
+
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
         Task { @MainActor in
@@ -155,18 +171,19 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let locs = locations
         Task { @MainActor in
-            guard let cont = self.locationContinuation else { return }
-            self.locationContinuation = nil
-            if let latest = locs.last {
-                cont.resume(returning: latest)
-            } else {
-                cont.resume(throwing: Error.unavailable)
+            // Resolve one-shot request first, then fan out to monitor callbacks.
+            if let cont = self.locationContinuation {
+                self.locationContinuation = nil
+                if let latest = locs.last {
+                    cont.resume(returning: latest)
+                } else {
+                    cont.resume(throwing: Error.unavailable)
+                }
             }
-        }
-
-        let latest = locations.last
-        Task { @MainActor in
-            if let latest, let updates = self.updatesContinuation {
+            if let callback = self.significantLocationCallback, let latest = locs.last {
+                callback(latest)
+            }
+            if let latest = locs.last, let updates = self.updatesContinuation {
                 updates.yield(latest)
             }
         }

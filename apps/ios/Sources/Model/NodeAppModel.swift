@@ -1467,6 +1467,34 @@ private extension NodeAppModel {
         return json
     }
 
+    func startSignificantLocationMonitoring() {
+        let mode = self.locationMode()
+        guard mode == .always else { return }
+        let status = self.locationService.authorizationStatus()
+        guard status == .authorizedAlways else { return }
+        self.locationService.startMonitoringSignificantLocationChanges { [weak self] location in
+            guard let self else { return }
+            struct Payload: Codable {
+                var lat: Double
+                var lon: Double
+                var accuracyMeters: Double
+                var source: String?
+            }
+            let payload = Payload(
+                lat: location.coordinate.latitude,
+                lon: location.coordinate.longitude,
+                accuracyMeters: location.horizontalAccuracy,
+                source: "ios-significant-location")
+            guard let data = try? JSONEncoder().encode(payload),
+                  let json = String(data: data, encoding: .utf8)
+            else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.nodeGateway.sendEvent(event: "location.update", payloadJSON: json)
+            }
+        }
+    }
+
     func isCameraEnabled() -> Bool {
         // Default-on: if the key doesn't exist yet, treat it as enabled.
         if UserDefaults.standard.object(forKey: "camera.enabled") == nil { return true }
@@ -1719,6 +1747,7 @@ private extension NodeAppModel {
                             }
                             await self.showA2UIOnConnectIfNeeded()
                             await self.onNodeGatewayConnected()
+                            await MainActor.run { self.startSignificantLocationMonitoring() }
                         },
                         onDisconnected: { [weak self] reason in
                             guard let self else { return }
