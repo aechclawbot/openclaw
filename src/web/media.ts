@@ -29,6 +29,8 @@ type WebMediaOptions = {
 
 const HEIC_MIME_RE = /^image\/hei[cf]$/i;
 const HEIC_EXT_RE = /\.(heic|heif)$/i;
+const DATA_URL_RE = /^data:([^;,]+)?(;base64)?,(.*)$/i;
+const BASE64_BODY_RE = /^[A-Za-z0-9+/]*={0,2}$/;
 const MB = 1024 * 1024;
 
 function formatMb(bytes: number, digits = 2): string {
@@ -66,6 +68,38 @@ function toJpegFileName(fileName?: string): string | undefined {
     return path.format({ dir: parsed.dir, name: parsed.name || trimmed, ext: ".jpg" });
   }
   return path.format({ dir: parsed.dir, name: parsed.name, ext: ".jpg" });
+}
+
+function parseBase64DataUrl(mediaUrl: string): { contentType: string; base64Body: string } | null {
+  const match = mediaUrl.match(DATA_URL_RE);
+  if (!match) {
+    return null;
+  }
+  if (!match[2]) {
+    throw new Error("Only base64 data: URLs are supported");
+  }
+  const contentType = match[1] || "application/octet-stream";
+  const base64Body = (match[3] || "").replaceAll(/\s+/g, "");
+  if (base64Body.length === 0) {
+    return { contentType, base64Body };
+  }
+  if (!BASE64_BODY_RE.test(base64Body) || base64Body.length % 4 === 1) {
+    throw new Error("Invalid base64 data in data: URL");
+  }
+  return { contentType, base64Body };
+}
+
+function estimateDecodedBase64Bytes(base64Body: string): number {
+  if (base64Body.length === 0) {
+    return 0;
+  }
+  let padding = 0;
+  if (base64Body.endsWith("==")) {
+    padding = 2;
+  } else if (base64Body.endsWith("=")) {
+    padding = 1;
+  }
+  return Math.floor((base64Body.length * 3) / 4) - padding;
 }
 
 type OptimizedImage = {
@@ -201,16 +235,22 @@ async function loadWebMediaInternal(
     };
   };
 
-  // Handle data: URLs (base64-encoded inline data)
-  if (mediaUrl.startsWith("data:")) {
-    const match = mediaUrl.match(/^data:([^;,]+)?(?:;base64)?,(.*)$/);
-    if (!match) {
-      throw new Error("Invalid data: URL format");
-    }
-    const contentType = match[1] || "application/octet-stream";
-    const base64Data = match[2];
-    const buffer = Buffer.from(base64Data, "base64");
+  const parsedDataUrl = parseBase64DataUrl(mediaUrl);
+  if (parsedDataUrl) {
+    const { contentType, base64Body } = parsedDataUrl;
     const kind = mediaKindFromMime(contentType);
+    const defaultFetchCap = maxBytesForKind("unknown");
+    const decodeCap =
+      maxBytes === undefined
+        ? defaultFetchCap
+        : optimizeImages && kind === "image"
+          ? Math.max(maxBytes, defaultFetchCap)
+          : maxBytes;
+    const estimatedBytes = estimateDecodedBase64Bytes(base64Body);
+    if (estimatedBytes > decodeCap) {
+      throw new Error(formatCapLimit("Media", decodeCap, estimatedBytes));
+    }
+    const buffer = Buffer.from(base64Body, "base64");
     return await clampAndFinalize({ buffer, contentType, kind });
   }
 

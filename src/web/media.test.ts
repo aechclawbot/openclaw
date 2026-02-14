@@ -291,4 +291,32 @@ describe("web media loading", () => {
     expect(result.contentType).toBe("image/jpeg");
     expect(result.buffer.length).toBeLessThanOrEqual(cap);
   });
+
+  it("loads base64 data URLs", async () => {
+    const pngBuffer = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: "#00aaff" },
+    })
+      .png()
+      .toBuffer();
+    const dataUrl = `data:image/png;base64,${pngBuffer.toString("base64")}`;
+
+    const result = await loadWebMedia(dataUrl, 1024 * 1024);
+
+    expect(result.kind).toBe("image");
+    expect(result.contentType).toBe("image/jpeg");
+    expect(result.buffer.length).toBeGreaterThan(0);
+  });
+
+  it("rejects non-base64 data URLs", async () => {
+    await expect(loadWebMedia("data:image/png,hello", 1024)).rejects.toThrow(
+      /Only base64 data: URLs are supported/i,
+    );
+  });
+
+  it("rejects oversized base64 data URLs before decode", async () => {
+    const body = Buffer.alloc(4096, 1).toString("base64");
+    const dataUrl = `data:application/octet-stream;base64,${body}`;
+
+    await expect(loadWebMediaRaw(dataUrl, 128)).rejects.toThrow(/exceeds .*limit/i);
+  });
 });
