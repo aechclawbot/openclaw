@@ -1,6 +1,7 @@
 services:
   openclaw-gateway:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
+    container_name: oasis
     environment:
       HOME: /home/node
       TERM: xterm-256color
@@ -29,6 +30,7 @@ services:
 
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
+    container_name: oasis-cli
     environment:
       HOME: /home/node
       TERM: xterm-256color
@@ -44,3 +46,4 @@ services:
     tty: true
     init: true
     entrypoint: ["node", "dist/index.js"]
+
