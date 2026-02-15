@@ -114,7 +114,7 @@ services:
       DOCKER_HOST: http://docker-proxy:2375
       # All secrets loaded from /run/secrets/dashboard.env via entrypoint
     volumes:
-      - ${OPENCLAW_CONFIG_DIR}:/config:ro
+      - ${OPENCLAW_CONFIG_DIR}:/config
       - ${OPENCLAW_CONFIG_DIR}/.secrets/dashboard.env:/run/secrets/dashboard.env:ro
       - ./scripts/docker-secrets-entrypoint.sh:/usr/local/bin/docker-secrets-entrypoint.sh:ro
     entrypoint: ["docker-secrets-entrypoint.sh"]
