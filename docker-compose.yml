@@ -3,6 +3,38 @@ networks:
     driver: bridge
 
 services:
+  # --- Docker Socket Proxy ---
+  # Restricts Docker API access for the dashboard container.
+  # Only container list/inspect/logs are permitted (GET-only).
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker-proxy
+    networks:
+      - openclaw
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: 1
+      POST: 0
+      IMAGES: 0
+      VOLUMES: 0
+      NETWORKS: 0
+      EXEC: 0
+      BUILD: 0
+      COMMIT: 0
+      SWARM: 0
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --- OpenClaw Gateway ---
   openclaw-gateway:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
     container_name: oasis
@@ -28,9 +60,7 @@ services:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
       CLAWLANCER_API_KEY: ${CLAWLANCER_API_KEY}
       CLAWLANCER_AGENT_ID: ${CLAWLANCER_AGENT_ID}
-      NOLAN_ETH_PRIVATE_KEY: ${NOLAN_ETH_PRIVATE_KEY}
-      OASIS_ETH_PRIVATE_KEY: ${OASIS_ETH_PRIVATE_KEY}
-      AECH_ETH_PRIVATE_KEY: ${AECH_ETH_PRIVATE_KEY}
+      # ETH keys loaded from /run/secrets/eth-keys.env via entrypoint
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
@@ -38,17 +68,25 @@ services:
       - ./extensions/voice-call/src/webhook.ts:/app/extensions/voice-call/src/webhook.ts:ro
       - ./extensions/voice-call/src/providers/telnyx.ts:/app/extensions/voice-call/src/providers/telnyx.ts:ro
       - ./extensions/voice-call/src/response-generator.ts:/app/extensions/voice-call/src/response-generator.ts:ro
+      - ${OPENCLAW_CONFIG_DIR}/.secrets/eth-keys.env:/run/secrets/eth-keys.env:ro
+      - ./scripts/docker-secrets-entrypoint.sh:/usr/local/bin/docker-secrets-entrypoint.sh:ro
+    entrypoint: ["docker-secrets-entrypoint.sh"]
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
-      - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
-      - "3334:3334"
+      - "127.0.0.1:${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+      - "127.0.0.1:3334:3334"
     init: true
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     deploy:
       resources:
         limits:
           memory: 8g
           cpus: "2.0"
+          pids: 256
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:18789/health"]
       interval: 30s
@@ -71,10 +109,12 @@ services:
         "18789",
       ]
 
+  # --- OASIS Dashboard ---
   oasis-dashboard:
     build:
       context: ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard
     container_name: oasis-dashboard
+    user: "1000:1000"
     networks:
       - openclaw
     environment:
@@ -82,23 +122,47 @@ services:
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       DASHBOARD_PORT: 3000
       OPENCLAW_CONFIG_DIR: /config
-      OPENCLAW_DASHBOARD_USERNAME: ${OPENCLAW_DASHBOARD_USERNAME}
-      OPENCLAW_DASHBOARD_PASSWORD: ${OPENCLAW_DASHBOARD_PASSWORD}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      DOCKER_HOST: http://docker-proxy:2375
+      # Dashboard credentials loaded from /run/secrets/dashboard.env via entrypoint
     volumes:
-      - ${OPENCLAW_CONFIG_DIR}:/config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${OPENCLAW_CONFIG_DIR}:/config:ro
+      - ${OPENCLAW_CONFIG_DIR}/.secrets/dashboard.env:/run/secrets/dashboard.env:ro
+      - ./scripts/docker-secrets-entrypoint.sh:/usr/local/bin/docker-secrets-entrypoint.sh:ro
+    entrypoint: ["docker-secrets-entrypoint.sh"]
+    command: ["node", "server.js"]
     ports:
       - "3000:3000"
     depends_on:
-      - openclaw-gateway
+      openclaw-gateway:
+        condition: service_healthy
+      docker-socket-proxy:
+        condition: service_started
     restart: unless-stopped
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+          pids: 128
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
 
+  # --- CLI (on-demand) ---
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
     container_name: oasis-cli
@@ -125,6 +189,10 @@ services:
     stdin_open: true
     tty: true
     init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: json-file
       options:
