@@ -10,6 +10,7 @@ services:
       - openclaw
     environment:
       HOME: /home/node
+      SHELL: /usr/bin/bash
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
@@ -27,6 +28,9 @@ services:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
       CLAWLANCER_API_KEY: ${CLAWLANCER_API_KEY}
       CLAWLANCER_AGENT_ID: ${CLAWLANCER_AGENT_ID}
+      NOLAN_ETH_PRIVATE_KEY: ${NOLAN_ETH_PRIVATE_KEY}
+      OASIS_ETH_PRIVATE_KEY: ${OASIS_ETH_PRIVATE_KEY}
+      AECH_ETH_PRIVATE_KEY: ${AECH_ETH_PRIVATE_KEY}
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
@@ -66,6 +70,34 @@ services:
         "--port",
         "18789",
       ]
+
+  oasis-dashboard:
+    build:
+      context: ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard
+    container_name: oasis-dashboard
+    networks:
+      - openclaw
+    environment:
+      GATEWAY_URL: ws://oasis:18789
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      DASHBOARD_PORT: 3000
+      OPENCLAW_CONFIG_DIR: /config
+      OPENCLAW_DASHBOARD_USERNAME: ${OPENCLAW_DASHBOARD_USERNAME}
+      OPENCLAW_DASHBOARD_PASSWORD: ${OPENCLAW_DASHBOARD_PASSWORD}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR}:/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - openclaw-gateway
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-openclaw:local}

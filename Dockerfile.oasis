@@ -13,8 +13,12 @@ RUN apt-get update && \
     python3-venv \
     git \
     curl \
+    chromium \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+ENV CHROME_PATH=/usr/bin/chromium
+ENV SHELL=/usr/bin/bash
 
 # Python tools (uv for nano-pdf, whisper for transcription)
 RUN pip3 install --break-system-packages uv openai-whisper
@@ -24,6 +28,11 @@ RUN curl -sSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.t
 
 # Node tools
 RUN npm install -g clawhub
+RUN mkdir -p /home/node/node_modules && chown node:node /home/node/node_modules
+
+USER node
+RUN npm install --prefix /home/node viem
+USER root
 
 # Back to non-root for security
 USER node
