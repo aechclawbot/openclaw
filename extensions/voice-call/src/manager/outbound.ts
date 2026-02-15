@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+console.log("[voice-call] PATCHED outbound.ts loaded (v2)");
 import type { CallMode } from "../config.js";
 import type { CallManagerContext } from "./context.js";
 import {
@@ -209,11 +210,13 @@ export async function speakInitialMessage(
 
   console.log(`[voice-call] Speaking initial message for call ${call.callId} (mode: ${mode})`);
   const result = await speak(ctx, call.callId, initialMessage);
+  console.log(`[voice-call] Speak result: success=${result.success} error=${result.error ?? "none"}`);
   if (!result.success) {
     console.warn(`[voice-call] Failed to speak initial message: ${result.error}`);
     return;
   }
 
+  console.log(`[voice-call] Post-speak: mode=${mode} hasProvider=${!!ctx.provider} providerCallId=${call.providerCallId ?? "NONE"}`);
   if (mode === "notify") {
     const delaySec = ctx.config.outbound.notifyHangupDelaySec;
     console.log(`[voice-call] Notify mode: auto-hangup in ${delaySec}s for call ${call.callId}`);
@@ -224,6 +227,14 @@ export async function speakInitialMessage(
         await endCall(ctx, call.callId);
       }
     }, delaySec * 1000);
+  } else if (mode === "conversation" && ctx.provider && call.providerCallId) {
+    // Auto-start listening after the greeting so the caller can respond.
+    console.log(`[voice-call] Conversation mode: auto-starting listener for call ${call.callId}`);
+    transitionState(call, "listening");
+    persistCallRecord(ctx.storePath, call);
+    ctx.provider.startListening({ callId: call.callId, providerCallId: call.providerCallId }).catch((err) => {
+      console.warn(`[voice-call] Failed to start listening after greeting: ${err instanceof Error ? err.message : String(err)}`);
+    });
   }
 }
 

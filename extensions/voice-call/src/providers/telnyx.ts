@@ -110,16 +110,23 @@ export class TelnyxProvider implements VoiceCallProvider {
     try {
       const signedPayload = `${timestampStr}|${ctx.rawBody}`;
       const signatureBuffer = Buffer.from(signatureStr, "base64");
-      const publicKeyBuffer = Buffer.from(this.publicKey, "base64");
+      const publicKeyRaw = Buffer.from(this.publicKey, "base64");
+
+      // Ed25519 raw public keys are 32 bytes; wrap into DER SPKI if needed.
+      // DER SPKI prefix for Ed25519: 302a300506032b6570032100
+      let keyObject: crypto.KeyObject;
+      if (publicKeyRaw.length === 32) {
+        const spkiPrefix = Buffer.from("302a300506032b6570032100", "hex");
+        const spkiDer = Buffer.concat([spkiPrefix, publicKeyRaw]);
+        keyObject = crypto.createPublicKey({ key: spkiDer, format: "der", type: "spki" });
+      } else {
+        keyObject = crypto.createPublicKey({ key: publicKeyRaw, format: "der", type: "spki" });
+      }
 
       const isValid = crypto.verify(
         null, // Ed25519 doesn't use a digest
         Buffer.from(signedPayload),
-        {
-          key: publicKeyBuffer,
-          format: "der",
-          type: "spki",
-        },
+        keyObject,
         signatureBuffer,
       );
 
@@ -210,14 +217,17 @@ export class TelnyxProvider implements VoiceCallProvider {
           text: data.payload?.text || "",
         };
 
-      case "call.transcription":
+      case "call.transcription": {
+        // Telnyx nests transcription data under payload.transcription_data
+        const txData = data.payload?.transcription_data ?? data.payload;
         return {
           ...baseEvent,
           type: "call.speech",
-          transcript: data.payload?.transcription || "",
-          isFinal: data.payload?.is_final ?? true,
-          confidence: data.payload?.confidence,
+          transcript: txData?.transcript ?? data.payload?.transcription ?? "",
+          isFinal: txData?.is_final ?? true,
+          confidence: txData?.confidence,
         };
+      }
 
       case "call.hangup":
         return {
@@ -325,6 +335,7 @@ export class TelnyxProvider implements VoiceCallProvider {
     await this.apiRequest(`/calls/${input.providerCallId}/actions/transcription_start`, {
       command_id: crypto.randomUUID(),
       language: input.language || "en",
+      transcription_tracks: "both",
     });
   }
 

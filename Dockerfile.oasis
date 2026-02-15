@@ -1,0 +1,29 @@
+ARG BASE_IMAGE=openclaw:local
+FROM ${BASE_IMAGE}
+
+USER root
+
+# System packages
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ffmpeg \
+    jq \
+    python3 \
+    python3-pip \
+    python3-venv \
+    git \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python tools (uv for nano-pdf, whisper for transcription)
+RUN pip3 install --break-system-packages uv openai-whisper
+
+# ngrok (for voice-call webhook tunnel)
+RUN curl -sSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz | tar xz -C /usr/local/bin
+
+# Node tools
+RUN npm install -g clawhub
+
+# Back to non-root for security
+USER node

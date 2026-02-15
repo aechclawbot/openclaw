@@ -32,6 +32,9 @@ export class VoiceCallWebhookServer {
   /** Media stream handler for bidirectional audio (when streaming enabled) */
   private mediaStreamHandler: MediaStreamHandler | null = null;
 
+  /** Track calls with pending auto-respond to prevent overlapping responses */
+  private pendingAutoRespond = new Set<string>();
+
   constructor(
     config: VoiceCallConfig,
     manager: CallManager,
@@ -288,6 +291,28 @@ export class VoiceCallWebhookServer {
     for (const event of result.events) {
       try {
         this.manager.processEvent(event);
+
+        // Auto-respond for non-stream providers (e.g. Telnyx) when a final
+        // speech transcript arrives.  The media-stream path already handles
+        // this via its own onTranscript callback; here we cover the webhook-
+        // only transcription flow.
+        if (event.type === "call.speech" && event.isFinal && event.transcript) {
+          const call = this.manager.getCallByProviderCallId(event.providerCallId);
+          if (call) {
+            const callMode = call.metadata?.mode as string | undefined;
+            const shouldRespond = call.direction === "inbound" || callMode === "conversation";
+            if (shouldRespond && !this.pendingAutoRespond.has(call.callId)) {
+              this.pendingAutoRespond.add(call.callId);
+              this.handleInboundResponse(call.callId, event.transcript)
+                .catch((err) => {
+                  console.warn(`[voice-call] Failed to auto-respond:`, err);
+                })
+                .finally(() => {
+                  this.pendingAutoRespond.delete(call.callId);
+                });
+            }
+          }
+        }
       } catch (err) {
         console.error(`[voice-call] Error processing event ${event.type}:`, err);
       }

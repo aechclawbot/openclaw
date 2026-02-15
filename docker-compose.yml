@@ -1,22 +1,61 @@
+networks:
+  openclaw:
+    driver: bridge
+
 services:
   openclaw-gateway:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
     container_name: oasis
+    networks:
+      - openclaw
     environment:
       HOME: /home/node
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
+      TELNYX_API_KEY: ${TELNYX_API_KEY}
+      TELNYX_CONNECTION_ID: ${TELNYX_CONNECTION_ID}
+      TELNYX_PUBLIC_KEY: ${TELNYX_PUBLIC_KEY}
+      JITI_CACHE: "false"
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+      CLAWLANCER_API_KEY: ${CLAWLANCER_API_KEY}
+      CLAWLANCER_AGENT_ID: ${CLAWLANCER_AGENT_ID}
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ./extensions/voice-call/src/manager.ts:/app/extensions/voice-call/src/manager.ts:ro
+      - ./extensions/voice-call/src/webhook.ts:/app/extensions/voice-call/src/webhook.ts:ro
+      - ./extensions/voice-call/src/providers/telnyx.ts:/app/extensions/voice-call/src/providers/telnyx.ts:ro
+      - ./extensions/voice-call/src/response-generator.ts:/app/extensions/voice-call/src/response-generator.ts:ro
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+      - "3334:3334"
     init: true
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+          cpus: "2.0"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:18789/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     command:
       [
         "node",
@@ -31,11 +70,20 @@ services:
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
     container_name: oasis-cli
+    profiles:
+      - cli
+    networks:
+      - openclaw
     environment:
       HOME: /home/node
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       BROWSER: echo
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
@@ -45,5 +93,9 @@ services:
     stdin_open: true
     tty: true
     init: true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     entrypoint: ["node", "dist/index.js"]
-
