@@ -156,6 +156,23 @@ Root `tsconfig.json` has `experimentalDecorators: true` with `useDefineForClassF
 - When committing, scope to your changes only (unless told "commit all")
 - Unrecognized files from other agents: leave them alone, focus on your changes
 
+## Docker Operations (OASIS Deployment)
+
+**NEVER run `docker compose up` directly.** All secrets live in the macOS Keychain, not in `.env` or environment blocks. The launch script reads them at startup:
+
+| Command | Purpose |
+|---------|---------|
+| `scripts/oasis-up.sh` | Start all containers (reads Keychain → generates ephemeral secret files → `docker compose up -d`) |
+| `scripts/oasis-up.sh down` | Stop containers |
+| `scripts/oasis-up.sh logs -f` | Tail logs |
+| `scripts/oasis-up.sh restart` | Regenerate secrets + restart |
+
+- **`.env`** contains only non-secret config (paths, ports, image name, connection IDs). No API keys, tokens, or credentials.
+- **Secrets flow**: macOS Keychain → `~/.openclaw/.secrets/gateway.env` + `dashboard.env` (ephemeral, mode 600) → bind-mounted into containers at `/run/secrets/*.env` → sourced by `docker-secrets-entrypoint.sh`
+- **To rotate a key**: `security add-generic-password -U -s openclaw -a KEY_NAME -w "new-value"`, then `scripts/oasis-up.sh restart`
+- **To import all keys** (first-time setup): `scripts/keychain-store.sh`
+- **`docker compose restart` still does NOT re-read secrets** — always use `scripts/oasis-up.sh restart` to regenerate from Keychain
+
 ## Key Dependencies with Special Rules
 
 - Any dependency with `pnpm.patchedDependencies` must use exact versions (no `^`/`~`)

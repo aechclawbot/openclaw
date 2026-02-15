@@ -119,6 +119,10 @@
 - Never commit or publish real phone numbers, videos, or live configuration values. Use obviously fake placeholders in docs, tests, and examples.
 - Release flow: always read `docs/reference/RELEASING.md` and `docs/platforms/mac/release.md` before any release work; do not ask routine questions once those docs answer them.
 
+## Docker Operations (OASIS Deployment)
+
+**NEVER run `docker compose up` directly.** All secrets live in the macOS Keychain, not in `.env` or environment blocks. Use `scripts/oasis-up.sh` which reads Keychain → generates ephemeral secret files → runs compose. See CLAUDE.md for full command reference.
+
 ## Troubleshooting
 
 - Rebrand/migration issues or legacy config/service warnings: run `openclaw doctor` (see `docs/gateway/doctor.md`).

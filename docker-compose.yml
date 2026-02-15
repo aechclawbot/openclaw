@@ -44,23 +44,13 @@ services:
       HOME: /home/node
       SHELL: /usr/bin/bash
       TERM: xterm-256color
-      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      JITI_CACHE: "false"
+      TELNYX_CONNECTION_ID: ${TELNYX_CONNECTION_ID}
+      CLAWLANCER_AGENT_ID: ${CLAWLANCER_AGENT_ID}
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
-      TELNYX_API_KEY: ${TELNYX_API_KEY}
-      TELNYX_CONNECTION_ID: ${TELNYX_CONNECTION_ID}
-      TELNYX_PUBLIC_KEY: ${TELNYX_PUBLIC_KEY}
-      JITI_CACHE: "false"
-      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
-      CLAWLANCER_API_KEY: ${CLAWLANCER_API_KEY}
-      CLAWLANCER_AGENT_ID: ${CLAWLANCER_AGENT_ID}
-      # ETH keys loaded from /run/secrets/eth-keys.env via entrypoint
+      # All secrets loaded from /run/secrets/gateway.env via entrypoint
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
@@ -68,7 +58,7 @@ services:
       - ./extensions/voice-call/src/webhook.ts:/app/extensions/voice-call/src/webhook.ts:ro
       - ./extensions/voice-call/src/providers/telnyx.ts:/app/extensions/voice-call/src/providers/telnyx.ts:ro
       - ./extensions/voice-call/src/response-generator.ts:/app/extensions/voice-call/src/response-generator.ts:ro
-      - ${OPENCLAW_CONFIG_DIR}/.secrets/eth-keys.env:/run/secrets/eth-keys.env:ro
+      - ${OPENCLAW_CONFIG_DIR}/.secrets/gateway.env:/run/secrets/gateway.env:ro
       - ./scripts/docker-secrets-entrypoint.sh:/usr/local/bin/docker-secrets-entrypoint.sh:ro
     entrypoint: ["docker-secrets-entrypoint.sh"]
     ports:
@@ -119,12 +109,10 @@ services:
       - openclaw
     environment:
       GATEWAY_URL: ws://oasis:18789
-      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       DASHBOARD_PORT: 3000
       OPENCLAW_CONFIG_DIR: /config
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
       DOCKER_HOST: http://docker-proxy:2375
-      # Dashboard credentials loaded from /run/secrets/dashboard.env via entrypoint
+      # All secrets loaded from /run/secrets/dashboard.env via entrypoint
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/config:ro
       - ${OPENCLAW_CONFIG_DIR}/.secrets/dashboard.env:/run/secrets/dashboard.env:ro
@@ -173,19 +161,17 @@ services:
     environment:
       HOME: /home/node
       TERM: xterm-256color
-      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       BROWSER: echo
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
+      # All secrets loaded from /run/secrets/gateway.env via entrypoint
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR}/.secrets/gateway.env:/run/secrets/gateway.env:ro
+      - ./scripts/docker-secrets-entrypoint.sh:/usr/local/bin/docker-secrets-entrypoint.sh:ro
+    entrypoint: ["docker-secrets-entrypoint.sh", "node", "dist/index.js"]
     stdin_open: true
     tty: true
     init: true
@@ -198,4 +184,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    entrypoint: ["node", "dist/index.js"]
