@@ -8,13 +8,32 @@ export type Requirements = {
 
 export type RequirementConfigCheck = {
   path: string;
-  value: unknown;
   satisfied: boolean;
 };
 
 export type RequirementsMetadata = {
   requires?: Partial<Pick<Requirements, "bins" | "anyBins" | "env" | "config">>;
   os?: string[];
+};
+
+export type RequirementRemote = {
+  hasBin?: (bin: string) => boolean;
+  hasAnyBin?: (bins: string[]) => boolean;
+  platforms?: string[];
+};
+
+type RequirementsEvaluationContext = {
+  always: boolean;
+  hasLocalBin: (bin: string) => boolean;
+  localPlatform: string;
+  isEnvSatisfied: (envName: string) => boolean;
+  isConfigSatisfied: (pathStr: string) => boolean;
+};
+
+type RequirementsEvaluationRemoteContext = {
+  hasRemoteBin?: (bin: string) => boolean;
+  hasRemoteAnyBin?: (bins: string[]) => boolean;
+  remotePlatforms?: string[];
 };
 
 export function resolveMissingBins(params: {
@@ -84,28 +103,20 @@ export function resolveMissingEnv(params: {
 
 export function buildConfigChecks(params: {
   required: string[];
-  resolveValue: (pathStr: string) => unknown;
   isSatisfied: (pathStr: string) => boolean;
 }): RequirementConfigCheck[] {
   return params.required.map((pathStr) => {
-    const value = params.resolveValue(pathStr);
     const satisfied = params.isSatisfied(pathStr);
-    return { path: pathStr, value, satisfied };
+    return { path: pathStr, satisfied };
   });
 }
 
-export function evaluateRequirements(params: {
-  always: boolean;
-  required: Requirements;
-  hasLocalBin: (bin: string) => boolean;
-  hasRemoteBin?: (bin: string) => boolean;
-  hasRemoteAnyBin?: (bins: string[]) => boolean;
-  localPlatform: string;
-  remotePlatforms?: string[];
-  isEnvSatisfied: (envName: string) => boolean;
-  resolveConfigValue: (pathStr: string) => unknown;
-  isConfigSatisfied: (pathStr: string) => boolean;
-}): { missing: Requirements; eligible: boolean; configChecks: RequirementConfigCheck[] } {
+export function evaluateRequirements(
+  params: RequirementsEvaluationContext &
+    RequirementsEvaluationRemoteContext & {
+      required: Requirements;
+    },
+): { missing: Requirements; eligible: boolean; configChecks: RequirementConfigCheck[] } {
   const missingBins = resolveMissingBins({
     required: params.required.bins,
     hasLocalBin: params.hasLocalBin,
@@ -127,7 +138,6 @@ export function evaluateRequirements(params: {
   });
   const configChecks = buildConfigChecks({
     required: params.required.config,
-    resolveValue: params.resolveConfigValue,
     isSatisfied: params.isConfigSatisfied,
   });
   const missingConfig = configChecks.filter((check) => !check.satisfied).map((check) => check.path);
@@ -153,18 +163,12 @@ export function evaluateRequirements(params: {
   return { missing, eligible, configChecks };
 }
 
-export function evaluateRequirementsFromMetadata(params: {
-  always: boolean;
-  metadata?: RequirementsMetadata;
-  hasLocalBin: (bin: string) => boolean;
-  hasRemoteBin?: (bin: string) => boolean;
-  hasRemoteAnyBin?: (bins: string[]) => boolean;
-  localPlatform: string;
-  remotePlatforms?: string[];
-  isEnvSatisfied: (envName: string) => boolean;
-  resolveConfigValue: (pathStr: string) => unknown;
-  isConfigSatisfied: (pathStr: string) => boolean;
-}): {
+export function evaluateRequirementsFromMetadata(
+  params: RequirementsEvaluationContext &
+    RequirementsEvaluationRemoteContext & {
+      metadata?: RequirementsMetadata;
+    },
+): {
   required: Requirements;
   missing: Requirements;
   eligible: boolean;
@@ -187,8 +191,31 @@ export function evaluateRequirementsFromMetadata(params: {
     localPlatform: params.localPlatform,
     remotePlatforms: params.remotePlatforms,
     isEnvSatisfied: params.isEnvSatisfied,
-    resolveConfigValue: params.resolveConfigValue,
     isConfigSatisfied: params.isConfigSatisfied,
   });
   return { required, ...result };
+}
+
+export function evaluateRequirementsFromMetadataWithRemote(
+  params: RequirementsEvaluationContext & {
+    metadata?: RequirementsMetadata;
+    remote?: RequirementRemote;
+  },
+): {
+  required: Requirements;
+  missing: Requirements;
+  eligible: boolean;
+  configChecks: RequirementConfigCheck[];
+} {
+  return evaluateRequirementsFromMetadata({
+    always: params.always,
+    metadata: params.metadata,
+    hasLocalBin: params.hasLocalBin,
+    hasRemoteBin: params.remote?.hasBin,
+    hasRemoteAnyBin: params.remote?.hasAnyBin,
+    localPlatform: params.localPlatform,
+    remotePlatforms: params.remote?.platforms,
+    isEnvSatisfied: params.isEnvSatisfied,
+    isConfigSatisfied: params.isConfigSatisfied,
+  });
 }
