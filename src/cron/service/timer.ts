@@ -91,22 +91,41 @@ function applyJobResult(
         );
       }
     } else if (result.status === "error" && job.enabled) {
-      // Apply exponential backoff for errored jobs to prevent retry storms.
-      const backoff = errorBackoffMs(job.state.consecutiveErrors ?? 1);
-      const normalNext = computeJobNextRunAtMs(job, result.endedAt);
-      const backoffNext = result.endedAt + backoff;
-      // Use whichever is later: the natural next run or the backoff delay.
-      job.state.nextRunAtMs =
-        normalNext !== undefined ? Math.max(normalNext, backoffNext) : backoffNext;
-      state.deps.log.info(
-        {
-          jobId: job.id,
-          consecutiveErrors: job.state.consecutiveErrors,
-          backoffMs: backoff,
-          nextRunAtMs: job.state.nextRunAtMs,
-        },
-        "cron: applying error backoff",
-      );
+      const consecutiveErrors = job.state.consecutiveErrors ?? 1;
+
+      // Auto-disable recurring jobs after too many consecutive execution errors
+      // to prevent indefinite retry storms against broken configurations.
+      const MAX_CONSECUTIVE_EXEC_ERRORS = 10;
+      if (consecutiveErrors >= MAX_CONSECUTIVE_EXEC_ERRORS) {
+        job.enabled = false;
+        job.state.nextRunAtMs = undefined;
+        state.deps.log.error(
+          {
+            jobId: job.id,
+            jobName: job.name,
+            consecutiveErrors,
+            error: result.error,
+          },
+          "cron: auto-disabled job after repeated execution errors",
+        );
+      } else {
+        // Apply exponential backoff for errored jobs to prevent retry storms.
+        const backoff = errorBackoffMs(consecutiveErrors);
+        const normalNext = computeJobNextRunAtMs(job, result.endedAt);
+        const backoffNext = result.endedAt + backoff;
+        // Use whichever is later: the natural next run or the backoff delay.
+        job.state.nextRunAtMs =
+          normalNext !== undefined ? Math.max(normalNext, backoffNext) : backoffNext;
+        state.deps.log.info(
+          {
+            jobId: job.id,
+            consecutiveErrors,
+            backoffMs: backoff,
+            nextRunAtMs: job.state.nextRunAtMs,
+          },
+          "cron: applying error backoff",
+        );
+      }
     } else if (job.enabled) {
       job.state.nextRunAtMs = computeJobNextRunAtMs(job, result.endedAt);
     } else {

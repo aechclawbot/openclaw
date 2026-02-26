@@ -83,7 +83,7 @@
 
 ## Testing Guidelines
 
-- Framework: Vitest with V8 coverage thresholds (70% lines/branches/functions/statements).
+- Framework: Vitest with V8 coverage thresholds (70% lines/functions/statements, 55% branches).
 - Naming: match source names with `*.test.ts`; e2e in `*.e2e.test.ts`.
 - Run `pnpm test` (or `pnpm test:coverage`) before pushing when you touch logic.
 - Do not set test workers above 16; tried already.
@@ -121,7 +121,7 @@
 
 ## Docker Operations (OASIS Deployment)
 
-**NEVER run `docker compose up` directly.** All secrets live in the macOS Keychain, not in `.env` or environment blocks. Use `scripts/oasis-up.sh` which reads Keychain → generates ephemeral secret files → runs compose. See CLAUDE.md for full command reference.
+All config and secrets live in `.env`, passed to containers via `env_file: .env` in `docker-compose.yml`. Use `scripts/oasis-up.sh` as a convenience wrapper, or run `docker compose` directly.
 
 ## Troubleshooting
 

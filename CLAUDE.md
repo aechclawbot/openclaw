@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Note:** This is a symlink target. `AGENTS.md` is the primary file; keep both in sync.
+> **Note:** `AGENTS.md` has full upstream maintainer instructions; keep both files in sync.
 
 ## Project Overview
 
@@ -22,24 +22,24 @@ OpenClaw is a multi-channel AI gateway with extensible messaging integrations. I
 
 ## Essential Commands
 
-| Command | Purpose |
-|---------|---------|
-| `pnpm install` | Install dependencies |
-| `pnpm build` | Full build (TypeScript + UI + protocol) |
-| `pnpm tsgo` | Type-check only (no emit) |
-| `pnpm check` | Lint + format check + type-check (run before commits) |
-| `pnpm lint` | Oxlint (type-aware) |
-| `pnpm lint:fix` | Auto-fix lint + format |
-| `pnpm format` | Oxfmt write |
-| `pnpm format:check` | Oxfmt check |
-| `pnpm test` | Run all unit tests |
-| `pnpm test:fast` | Unit tests only (faster) |
-| `pnpm test:watch` | Vitest watch mode |
-| `pnpm test:e2e` | End-to-end tests |
-| `pnpm test:coverage` | Coverage report |
-| `pnpm openclaw ...` | Run CLI from source |
-| `pnpm gateway:dev` | Start gateway (dev profile, skip channels) |
-| `pnpm ui:dev` | Start Vite dev server for Control UI |
+| Command              | Purpose                                               |
+| -------------------- | ----------------------------------------------------- |
+| `pnpm install`       | Install dependencies                                  |
+| `pnpm build`         | Full build (TypeScript + UI + protocol)               |
+| `pnpm tsgo`          | Type-check only (no emit)                             |
+| `pnpm check`         | Lint + format check + type-check (run before commits) |
+| `pnpm lint`          | Oxlint (type-aware)                                   |
+| `pnpm lint:fix`      | Auto-fix lint + format                                |
+| `pnpm format`        | Oxfmt write                                           |
+| `pnpm format:check`  | Oxfmt check                                           |
+| `pnpm test`          | Run all unit tests                                    |
+| `pnpm test:fast`     | Unit tests only (faster)                              |
+| `pnpm test:watch`    | Vitest watch mode                                     |
+| `pnpm test:e2e`      | End-to-end tests                                      |
+| `pnpm test:coverage` | Coverage report                                       |
+| `pnpm openclaw ...`  | Run CLI from source                                   |
+| `pnpm gateway:dev`   | Start gateway (dev profile, skip channels)            |
+| `pnpm ui:dev`        | Start Vite dev server for Control UI                  |
 
 Run a single test file: `pnpm vitest run src/path/to/file.test.ts`
 
@@ -50,12 +50,12 @@ Live tests (real API keys): `CLAWDBOT_LIVE_TEST=1 pnpm test:live` or `LIVE=1 pnp
 ### Core Source (`src/`)
 
 - **`cli/`** — CLI wiring, program builder, dependency injection (`createDefaultDeps`)
-- **`commands/`** — Individual CLI command implementations (~194 files)
+- **`commands/`** — Individual CLI command implementations (~197 files)
 - **`gateway/`** — HTTP + WebSocket control plane server, auth, RPC methods
 - **`agents/`** — Agent runtime, model config, auth profiles, sandbox, tools
 - **`channels/`** + **`routing/`** — Channel abstraction layer and message routing
 - **`memory/`** — RAG system, embeddings (OpenAI/Gemini/Voyage), SQLite vector search
-- **`config/`** — YAML-based config loading/persistence, Zod validation
+- **`config/`** — JSON5-based config loading/persistence, Zod validation
 - **`plugin-sdk/`** — Public API for channel/skill plugin development
 - **`infra/`** — Infrastructure utilities (errors, formatting, etc.)
 - **`terminal/`** — Terminal UI: tables (`table.ts`), themes (`theme.ts`), palette (`palette.ts`)
@@ -73,7 +73,7 @@ Always consider **all** built-in + extension channels when refactoring shared lo
 ### Plugin System
 
 - **Channel plugins**: Implement `ChannelAdapter` interface, live in `extensions/`
-- **Skill plugins**: Custom agent tools, live in `skills/` (~53 plugins)
+- **Skill plugins**: Custom agent tools, live in `skills/` (~51 plugins)
 - **Runtime**: jiti-based dynamic module loading
 - **Deps**: Plugin-only deps go in the extension's `package.json`, not root. Avoid `workspace:*` in `dependencies`.
 
@@ -136,10 +136,12 @@ Always consider **all** built-in + extension channels when refactoring shared lo
 ## Control UI (Lit)
 
 Uses **legacy** decorators (not standard `accessor`-based):
+
 ```ts
 @state() foo = "bar";
 @property({ type: Number }) count = 0;
 ```
+
 Root `tsconfig.json` has `experimentalDecorators: true` with `useDefineForClassFields: false`.
 
 ## Docs (Mintlify)
@@ -158,23 +160,92 @@ Root `tsconfig.json` has `experimentalDecorators: true` with `useDefineForClassF
 
 ## Docker Operations (OASIS Deployment)
 
-**NEVER run `docker compose up` directly.** All secrets live in the macOS Keychain, not in `.env` or environment blocks. The launch script reads them at startup:
+| Command                       | Purpose                |
+| ----------------------------- | ---------------------- |
+| `scripts/oasis-up.sh`         | `docker compose up -d` |
+| `scripts/oasis-up.sh down`    | Stop containers        |
+| `scripts/oasis-up.sh logs -f` | Tail logs              |
+| `scripts/oasis-up.sh restart` | Restart containers     |
 
-| Command | Purpose |
-|---------|---------|
-| `scripts/oasis-up.sh` | Start all containers (reads Keychain → generates ephemeral secret files → `docker compose up -d`) |
-| `scripts/oasis-up.sh down` | Stop containers |
-| `scripts/oasis-up.sh logs -f` | Tail logs |
-| `scripts/oasis-up.sh restart` | Regenerate secrets + restart |
-
-- **`.env`** contains only non-secret config (paths, ports, image name, connection IDs). No API keys, tokens, or credentials.
-- **Secrets flow**: macOS Keychain → `~/.openclaw/.secrets/gateway.env` + `dashboard.env` (ephemeral, mode 600) → bind-mounted into containers at `/run/secrets/*.env` → sourced by `docker-secrets-entrypoint.sh`
-- **To rotate a key**: `security add-generic-password -U -s openclaw -a KEY_NAME -w "new-value"`, then `scripts/oasis-up.sh restart`
-- **To import all keys** (first-time setup): `scripts/keychain-store.sh`
-- **`docker compose restart` still does NOT re-read secrets** — always use `scripts/oasis-up.sh restart` to regenerate from Keychain
+- **`.env`** contains all config and secrets. Passed to containers via `env_file: .env` in `docker-compose.yml`.
+- `docker compose up -d` can also be run directly — `oasis-up.sh` is just a convenience wrapper.
 
 ## Key Dependencies with Special Rules
 
 - Any dependency with `pnpm.patchedDependencies` must use exact versions (no `^`/`~`)
 - Never update the Carbon dependency
 - Patching deps (pnpm patches, overrides, vendored changes) requires explicit approval
+
+## Oasis Deployment
+
+### CRITICAL: Resource Management
+
+This machine has 16GB RAM and 4 CPU cores. Before doing heavy work (builds, Claude Code sessions), **pause low-priority containers** to free resources. Unpause when done.
+
+```bash
+# Pause (frees ~3GB headroom)
+docker pause whisperx audio-listener 2>/dev/null || true
+
+# Unpause
+docker unpause whisperx audio-listener 2>/dev/null || true
+```
+
+Never stop/restart these — only pause/unpause. Stopping loses loaded model state.
+
+### Infrastructure Map
+
+**Docker containers** (managed via `scripts/oasis-up.sh` / `docker compose`):
+
+| Container         | Service                           | Health Endpoint                    | CPU/Mem Limit | Priority |
+| ----------------- | --------------------------------- | ---------------------------------- | ------------- | -------- |
+| `oasis`           | OpenClaw gateway                  | `http://localhost:18789/health`    | 2.0 / 3GB     | HIGH     |
+| `oasis-dashboard` | Web UI (Express + vanilla JS)     | `http://localhost:3000/api/health` | 0.5 / 512MB   | HIGH     |
+| `docker-proxy`    | Docker socket proxy (read-only)   | —                                  | default       | HIGH     |
+| `whisperx`        | Audio transcription + diarization | `http://localhost:9000/health`     | 2.0 / 3GB     | LOW      |
+| `audio-listener`  | Mic VAD + voice command dispatch  | `http://localhost:9001/health`     | 0.5 / 256MB   | LOW      |
+| `oasis-cli`       | CLI (on-demand, `cli` profile)    | —                                  | —             | —        |
+
+**Audio pipeline:** Microphone -> PulseAudio (host) -> audio-listener (VAD) -> ~/oasis-audio/inbox/ -> whisperx (transcribe) -> ~/oasis-audio/done/ -> audio-listener (voice command dispatch) -> gateway hooks API
+
+**Supporting services** (macOS launchd):
+
+| Service                      | Purpose                                       |
+| ---------------------------- | --------------------------------------------- |
+| `com.openclaw.oasis`         | Auto-start Docker via `scripts/oasis-up.sh`   |
+| `com.openclaw.backup`        | Config backups to Google Drive                |
+| `com.oasis.plaud-sync`       | Rsync audio from Google Drive                 |
+| `com.oasis.curator-manifest` | Update MANIFEST.md every 2 min                |
+| `org.pulseaudio`             | PulseAudio audio bridge for Docker mic access |
+
+**Key paths:**
+
+- Secrets: `.env` (all Docker secrets)
+- Logs: `~/.openclaw/logs/`
+- Audio inbox: `~/oasis-audio/inbox/` (WAV files from audio-listener)
+- Audio transcripts: `~/oasis-audio/done/` (JSON from whisperx)
+- Voice profiles: `~/.openclaw/voice-profiles/`
+- PulseAudio socket: `/tmp/pulseaudio.socket`
+
+### Secrets Management
+
+- All Docker secrets live in **`.env`** at repo root. No Keychain dependency for containers.
+- `scripts/oasis-up.sh` is a clean wrapper around `docker compose` — reads nothing from Keychain.
+- `HF_TOKEN` in `.env` enables speaker diarization in WhisperX.
+
+### Agent Team Roster
+
+| Agent                   | Domain                                                                                                             | On-Spawn                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| **Lead Architect**      | Strategy, orchestration, delegates to specialists                                                                  | Runs `scripts/oasis-health.sh`, reviews report    |
+| **Oasis Ops**           | Docker lifecycle (`scripts/oasis-up.sh`), container health, resource limits, launchd services                      | Runs `scripts/oasis-health.sh`, self-heals issues |
+| **Frontend Specialist** | `oasis-dashboard` UI/UX and React state management                                                                 | —                                                 |
+| **The Sentinel**        | Security auditing (`.env` PII, container caps, port exposure), Dashboard QA                                        | —                                                 |
+| **Context Curator**     | Audio pipeline (whisperx, audio-listener containers), diarization accuracy, speaker enrollment, transcript quality | —                                                 |
+| **The Archivist**       | Code debt removal, refactoring legacy modules, architectural research                                              | —                                                 |
+
+### Standing Orders (All Agents)
+
+- On spawn, **Oasis Ops** and **Lead Architect** run `scripts/oasis-health.sh` and report findings.
+- Security: never commit secrets; `.env` is gitignored; validate no PII leaks into logs.
+- Efficiency: monitor container resource usage vs limits in `docker-compose.yml`.
+- All secrets for Docker are in `.env` — never add Keychain lookups to Docker workflows.

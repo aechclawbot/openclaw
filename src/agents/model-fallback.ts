@@ -7,6 +7,7 @@ import {
 } from "./auth-profiles.js";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "./defaults.js";
 import {
+  FailoverError,
   coerceToFailoverError,
   describeFailoverError,
   isFailoverError,
@@ -272,11 +273,26 @@ export async function runWithModelFallback<T>(params: {
       if (shouldRethrowAbort(err)) {
         throw err;
       }
+      const coerced = coerceToFailoverError(err, {
+        provider: candidate.provider,
+        model: candidate.model,
+      });
+      // When the error cannot be classified but we have remaining candidates,
+      // treat it as an "unknown" failover error so the chain continues instead
+      // of short-circuiting on the first unclassified failure.
       const normalized =
-        coerceToFailoverError(err, {
-          provider: candidate.provider,
-          model: candidate.model,
-        }) ?? err;
+        coerced ??
+        (i < candidates.length - 1
+          ? new FailoverError(
+              (err instanceof Error ? err.message : String(err)) || "unclassified error",
+              {
+                reason: "unknown",
+                provider: candidate.provider,
+                model: candidate.model,
+                cause: err instanceof Error ? err : undefined,
+              },
+            )
+          : err);
       if (!isFailoverError(normalized)) {
         throw err;
       }
@@ -298,6 +314,13 @@ export async function runWithModelFallback<T>(params: {
         attempt: i + 1,
         total: candidates.length,
       });
+
+      // Brief delay between fallback attempts to avoid rapid-fire quota burn
+      // when multiple providers share rate-limit windows.
+      if (i < candidates.length - 1) {
+        const delayMs = described.reason === "rate_limit" ? 2_000 : 500;
+        await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+      }
     }
   }
 

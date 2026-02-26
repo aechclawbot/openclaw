@@ -2,6 +2,9 @@ networks:
   openclaw:
     driver: bridge
 
+volumes:
+  whisperx-cache:
+
 services:
   # --- Docker Socket Proxy ---
   # Restricts Docker API access for the dashboard container.
@@ -40,27 +43,20 @@ services:
     container_name: oasis
     networks:
       - openclaw
+    env_file: .env
     environment:
       HOME: /home/node
       SHELL: /usr/bin/bash
       TERM: xterm-256color
       JITI_CACHE: "false"
-      TELNYX_CONNECTION_ID: ${TELNYX_CONNECTION_ID}
-      CLAWLANCER_AGENT_ID: ${CLAWLANCER_AGENT_ID}
-      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
-      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
-      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
-      # All secrets loaded from /run/secrets/gateway.env via entrypoint
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ./dist:/app/dist:ro
       - ./extensions/voice-call/src/manager.ts:/app/extensions/voice-call/src/manager.ts:ro
       - ./extensions/voice-call/src/webhook.ts:/app/extensions/voice-call/src/webhook.ts:ro
       - ./extensions/voice-call/src/providers/telnyx.ts:/app/extensions/voice-call/src/providers/telnyx.ts:ro
       - ./extensions/voice-call/src/response-generator.ts:/app/extensions/voice-call/src/response-generator.ts:ro
-      - ${OPENCLAW_CONFIG_DIR}/.secrets/gateway.env:/run/secrets/gateway.env:ro
-      - ./scripts/docker-secrets-entrypoint.sh:/usr/local/bin/docker-secrets-entrypoint.sh:ro
-    entrypoint: ["docker-secrets-entrypoint.sh"]
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "127.0.0.1:${OPENCLAW_BRIDGE_PORT:-18790}:18790"
@@ -74,11 +70,15 @@ services:
     deploy:
       resources:
         limits:
-          memory: 8g
+          memory: 3g
           cpus: "2.0"
           pids: 256
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:18789/health"]
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "require(''net'').createConnection(18789,''127.0.0.1'').on(''connect'',()=>process.exit(0)).on(''error'',()=>process.exit(1))"',
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -112,12 +112,19 @@ services:
       DASHBOARD_PORT: 3000
       OPENCLAW_CONFIG_DIR: /config
       DOCKER_HOST: http://docker-proxy:2375
-      # All secrets loaded from /run/secrets/dashboard.env via entrypoint
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      OPENCLAW_DASHBOARD_USERNAME: ${OPENCLAW_DASHBOARD_USERNAME:-}
+      OPENCLAW_DASHBOARD_PASSWORD: ${OPENCLAW_DASHBOARD_PASSWORD:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      AUDIO_DONE_DIR: /audio/done
+      AUDIO_INBOX_DIR: /audio/inbox
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/config
-      - ${OPENCLAW_CONFIG_DIR}/.secrets/dashboard.env:/run/secrets/dashboard.env:ro
-      - ./scripts/docker-secrets-entrypoint.sh:/usr/local/bin/docker-secrets-entrypoint.sh:ro
-    entrypoint: ["docker-secrets-entrypoint.sh"]
+      - ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard/server.js:/app/server.js:ro
+      - ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard/server:/app/server:ro
+      - ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard/public:/app/public:ro
+      - ~/oasis-audio/done:/audio/done:ro
+      - ~/oasis-audio/inbox:/audio/inbox:ro
     command: ["node", "server.js"]
     ports:
       - "3000:3000"
@@ -150,6 +157,188 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # --- Transcriber (Fast Transcription + Alignment, No Diarization) ---
+  transcriber:
+    build:
+      context: ./transcriber-service
+      dockerfile: Dockerfile
+    container_name: transcriber
+    networks:
+      openclaw:
+        aliases:
+          - whisperx # backward compat for audio-listener WHISPERX_API_URL
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - whisperx-cache:/root/.cache
+      - ~/oasis-audio/inbox:/audio/inbox
+      - ~/oasis-audio/done:/audio/done
+      - ./transcriber-service/app.py:/app/app.py:ro
+    env_file: .env
+    environment:
+      WHISPER_MODEL: small
+      DEVICE: cpu
+      COMPUTE_TYPE: int8
+      BATCH_SIZE: "4"
+      API_PORT: "9000"
+      WATCH_FOLDER: /audio/inbox
+      OUTPUT_FOLDER: /audio/done
+      WATCH_INTERVAL: "5"
+      OUTPUT_FORMAT: json
+      WHISPER_LANGUAGE: en
+      VAD_ONSET: "0.200"
+      VAD_OFFSET: "0.150"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1536m
+        reservations:
+          cpus: "0.25"
+          memory: 512m
+    cpu_shares: 512
+    oom_score_adj: 400
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9000/health"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --- Diarizer (Async Speaker Identification via pyannote.audio) ---
+  diarizer:
+    build:
+      context: ./diarizer-service
+      dockerfile: Dockerfile
+    container_name: diarizer
+    networks:
+      - openclaw
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9002:9002"
+    volumes:
+      - whisperx-cache:/root/.cache
+      - ~/oasis-audio/inbox:/audio/inbox:ro
+      - ~/oasis-audio/done:/audio/done
+      - ./diarizer-service/app.py:/app/app.py:ro
+      - ./diarizer-service/speaker_identify.py:/app/speaker_identify.py:ro
+      - ~/.openclaw/voice-profiles:/voice-profiles:ro
+      - ~/.openclaw/unknown-speakers:/unknown-speakers
+    env_file: .env
+    environment:
+      API_PORT: "9002"
+      DEVICE: cpu
+      TRANSCRIPT_DIR: /audio/done
+      AUDIO_DIR: /audio/inbox
+      WATCH_INTERVAL: "10"
+      VOICE_PROFILES_DIR: /voice-profiles
+      UNKNOWN_SPEAKERS_DIR: /unknown-speakers
+      SPEAKER_ID_ENABLED: "true"
+    depends_on:
+      transcriber:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 3g
+        reservations:
+          cpus: "0.1"
+          memory: 512m
+    cpu_shares: 128
+    oom_score_adj: 600
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9002/health"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 180s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --- Audio Listener (VAD + Voice Command Dispatch) ---
+  audio-listener:
+    build:
+      context: ./audio-listener
+      dockerfile: Dockerfile
+    container_name: audio-listener
+    networks:
+      - openclaw
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9001:9001"
+    env_file: .env
+    volumes:
+      - ~/oasis-audio/inbox:/audio/inbox
+      - ~/oasis-audio/done:/audio/done
+      - /tmp/pulseaudio.socket:/tmp/pulseaudio.socket
+      - ~/.config/pulse/cookie:/root/.config/pulse/cookie:ro
+      - ~/.openclaw/voice-profiles:/voice-profiles:ro
+    environment:
+      SAMPLE_RATE: "16000"
+      VAD_AGGRESSIVENESS: "3"
+      MIN_SPEECH_SECONDS: "1.5"
+      MAX_SEGMENT_SECONDS: "1800"
+      SILENCE_TIMEOUT: "4.0"
+      SILENCE_TIMEOUT_MIN: "3.0"
+      SILENCE_TIMEOUT_MAX: "8.0"
+      SILENCE_GROW_AFTER_SECONDS: "30"
+      OUTPUT_DIR: /audio/inbox
+      HEALTH_PORT: "9001"
+      PULSE_SERVER: tcp:host.docker.internal:4713
+      OPENCLAW_GATEWAY_URL: http://oasis:18789
+      TRANSCRIPT_WATCH_DIR: /audio/done
+      TRANSCRIPT_POLL_INTERVAL: "2"
+      WHISPERX_API_URL: "http://whisperx:9000"
+      FAST_PATH_MAX_SECONDS: "60"
+      FAST_PATH_DIARIZE: "false"
+      VERIFY_SPEAKER: "true"
+      VOICE_PROFILES_DIR: /voice-profiles
+      AUDIO_GAIN_DB: "6"
+      NOISE_GATE_RMS: "0.03"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1536m
+        reservations:
+          cpus: "0.1"
+          memory: 256m
+    cpu_shares: 256
+    oom_score_adj: 500
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # --- CLI (on-demand) ---
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
@@ -158,20 +347,15 @@ services:
       - cli
     networks:
       - openclaw
+    env_file: .env
     environment:
       HOME: /home/node
       TERM: xterm-256color
       BROWSER: echo
-      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
-      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
-      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
-      # All secrets loaded from /run/secrets/gateway.env via entrypoint
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
-      - ${OPENCLAW_CONFIG_DIR}/.secrets/gateway.env:/run/secrets/gateway.env:ro
-      - ./scripts/docker-secrets-entrypoint.sh:/usr/local/bin/docker-secrets-entrypoint.sh:ro
-    entrypoint: ["docker-secrets-entrypoint.sh", "node", "dist/index.js"]
+    entrypoint: ["node", "dist/index.js"]
     stdin_open: true
     tty: true
     init: true
