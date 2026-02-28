@@ -157,6 +157,129 @@
 
 All config and secrets live in `.env`, passed to containers via `env_file: .env` in `docker-compose.yml`. Use `scripts/oasis-up.sh` as a convenience wrapper, or run `docker compose` directly.
 
+### Weekly Auto-Update
+
+- **Script**: `scripts/oasis-weekly-update.sh` — pulls latest from upstream, merges, builds, rebuilds Docker, runs QA health checks, sends Telegram notification.
+- **launchd**: `com.openclaw.weekly-update` — runs every Sunday at 4:00 AM.
+- **Dry run**: `scripts/oasis-weekly-update.sh --dry-run` — check for updates without applying.
+- **Logs**: `~/.openclaw/logs/weekly-update-*.log` (keeps last 12).
+- **On merge conflicts**: aborts merge and sends failure notification — manual resolution required.
+
+### Dashboard Docker Management
+
+- **Page**: Dashboard sidebar > Docker — shows all container status, CPU, memory, uptime, restart count.
+- **Actions**: Stop, Start, Restart individual containers. Restart All. Rebuild & Update (triggers weekly update script).
+- **API**: `/api/docker/containers` (GET), `/api/docker/containers/:name/stop|start|restart` (POST), `/api/docker/restart-all` (POST), `/api/docker/rebuild` (POST).
+- **Docker socket proxy**: `POST: 1` enabled for container management via `tecnativa/docker-socket-proxy`.
+
+## OASIS Log Locations
+
+All OASIS logs are organized across Docker containers, host system services, and agent sessions.
+
+### Central Log Directory (`~/.openclaw/logs/`)
+
+| Log File                            | Purpose                                              | Source                                      |
+| ----------------------------------- | ---------------------------------------------------- | ------------------------------------------- |
+| `health-alert.log`                  | Container & gateway health monitoring (10m interval) | `com.oasis.health-alert` launchd            |
+| `transcript-sync.log`               | WhisperX → curator transcript conversion             | `com.oasis.transcript-sync` launchd         |
+| `cron.log`                          | Combined: todo-runner, bug-scanner, security-scanner | Multiple launchd services                   |
+| `nightly-import.log`                | Audio import pipeline (1:00 AM daily)                | `com.oasis.nightly-import` launchd          |
+| `launchd-oasis.log`                 | Gateway startup via launchd                          | `com.openclaw.oasis` launchd                |
+| `launchd-weekly-update.log`         | Weekly update script output                          | `com.openclaw.weekly-update` launchd        |
+| `commands.log`                      | CLI command execution history                        | OpenClaw CLI                                |
+| `config-audit.jsonl`                | Configuration change audit trail                     | OpenClaw core                               |
+| `pulseaudio.log`                    | PulseAudio service logs                              | `org.pulseaudio` launchd                    |
+| `pulseaudio-error.log`              | PulseAudio error output                              | `org.pulseaudio` launchd                    |
+| `audio-import.log`                  | Audio import stdout                                  | `ai.openclaw.audio-import` launchd          |
+| `audio-import-error.log`            | Audio import stderr                                  | `ai.openclaw.audio-import` launchd          |
+| `voice-listener.log`                | Voice listener stdout                                | `ai.openclaw.voice-listener` launchd        |
+| `voice-listener-error.log`          | Voice listener stderr                                | `ai.openclaw.voice-listener` launchd        |
+| `listener-stdout.log`               | Claude todo listener stdout                          | `com.openclaw.claude-todo-listener` launchd |
+| `listener-stderr.log`               | Claude todo listener stderr                          | `com.openclaw.claude-todo-listener` launchd |
+| `listener.log`                      | Approval listener v2 combined log                    | `com.openclaw.claude-todo-listener` launchd |
+| `weekly-update-YYYYMMDD-HHMMSS.log` | Per-run update logs (keeps last 12)                  | `scripts/oasis-weekly-update.sh`            |
+
+### Temporary Logs (`/tmp/`)
+
+| Log File                    | Purpose                         | Source                         |
+| --------------------------- | ------------------------------- | ------------------------------ |
+| `/tmp/plaud-sync.log`       | Plaud sync output (5m interval) | `com.oasis.plaud-sync` launchd |
+| `/tmp/plaud-sync-error.log` | Plaud sync errors               | `com.oasis.plaud-sync` launchd |
+| `/tmp/openclaw-backup.log`  | Backup script (3:00 AM daily)   | `com.openclaw.backup` launchd  |
+
+### Docker Container Logs
+
+Access via `docker compose logs [SERVICE]`. All use json-file driver with 10MB max, 3 rotated files.
+
+| Service               | Container         | Purpose                                                    |
+| --------------------- | ----------------- | ---------------------------------------------------------- |
+| `openclaw-gateway`    | `oasis`           | Main gateway (agent runtime, channels, API)                |
+| `oasis-dashboard`     | `oasis-dashboard` | Dashboard web UI (port 3000)                               |
+| `audio-listener`      | `audio-listener`  | Audio pipeline: VAD, transcription, speaker ID (port 9001) |
+| `docker-socket-proxy` | `docker-proxy`    | Docker socket proxy for dashboard management               |
+
+### Agent Session Logs
+
+**Location:** `~/.openclaw/agents/{agentId}/sessions/*.jsonl`
+
+JSONL-format execution logs per agent session. Known agents: `anorak`, `oasis`, `oasis-social`, `nolan`, `aech`, `dito`, `ir0k`, `curator`, `art3mis`, `ogden`, `main`.
+
+### Cron Job Execution Logs
+
+**Location:** `~/.openclaw/cron/runs/*.jsonl`
+
+Per-execution JSONL logs for scheduled jobs: `clawlancer-scan`, `morning-news-brief`, `anorak-daily-cruise`, `anorak-daily-recipe`, `anorak-weekly-cruise`, `anorak-weekly-cruise-summary`, `anorak-weekly-meals`, `curator-weekly-cleanup`, `dito-daily-prospecting`, `dito-weekly-pipeline`, `ogden-weekly-strategy`, `aech-arb-scan`.
+
+### Audio Pipeline Data
+
+| Location                                                      | Purpose                                          |
+| ------------------------------------------------------------- | ------------------------------------------------ |
+| `~/oasis-audio/inbox/`                                        | WAV files awaiting transcription                 |
+| `~/oasis-audio/done/`                                         | Completed transcripts (JSON) + `.synced` markers |
+| `~/oasis-audio/done/.assemblyai-cost.json`                    | AssemblyAI API cost tracker                      |
+| `~/.openclaw/workspace-curator/transcripts/voice/YYYY/MM/DD/` | Dashboard-format voice transcripts               |
+| `~/.openclaw/voice-profiles/`                                 | Enrolled speaker voice profiles                  |
+| `~/.openclaw/unknown-speakers/`                               | Unidentified speaker candidates                  |
+
+### macOS Unified Logs
+
+**Subsystem:** `ai.openclaw` — access via `scripts/clawlog.sh` or `log show --predicate 'subsystem == "ai.openclaw"'`
+
+**Categories:** voicewake, gateway, xpc, notifications, screenshot, shell.
+
+### State Files (Not Logs, But Diagnostic)
+
+| File                                    | Purpose                           |
+| --------------------------------------- | --------------------------------- |
+| `~/.openclaw/health-alert-state.json`   | Last health check state           |
+| `~/.openclaw/nightly-import-state.json` | Audio import state                |
+| `~/.openclaw/update-check.json`         | Weekly update check state         |
+| `~/.openclaw/approval-listener.pid`     | Approval listener PID             |
+| `~/.openclaw/pending-plans.json`        | Execution plans awaiting approval |
+| `~/.openclaw/dashboard-todos.json`      | Dashboard todo list               |
+
+### Quick Reference
+
+```bash
+# Docker container logs
+docker compose logs -f oasis                    # Gateway
+docker compose logs -f oasis-dashboard          # Dashboard
+docker compose logs -f audio-listener           # Audio pipeline
+docker compose logs --since 1h oasis            # Last hour
+
+# Host system logs
+tail -f ~/.openclaw/logs/health-alert.log       # Health alerts
+tail -f ~/.openclaw/logs/transcript-sync.log    # Transcript sync
+ls -lh ~/.openclaw/logs/                        # All log files
+
+# macOS unified logs
+scripts/clawlog.sh -f                           # Follow live
+scripts/clawlog.sh -c gateway                   # Gateway category
+
+# Agent sessions
+ls -t ~/.openclaw/agents/oasis/sessions/*.jsonl | head -5  # Recent sessions
+```
+
 ## Troubleshooting
 
 - Rebrand/migration issues or legacy config/service warnings: run `openclaw doctor` (see `docs/gateway/doctor.md`).
