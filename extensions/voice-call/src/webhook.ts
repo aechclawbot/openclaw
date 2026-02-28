@@ -361,7 +361,9 @@ export class VoiceCallWebhookServer {
           // this via its own onTranscript callback; here we cover the webhook-
           // only transcription flow.
           if (event.type === "call.speech" && event.isFinal && event.transcript) {
-            const call = this.manager.getCallByProviderCallId(event.providerCallId);
+            const call = event.providerCallId
+              ? this.manager.getCallByProviderCallId(event.providerCallId)
+              : undefined;
             if (call) {
               const callMode = call.metadata?.mode as string | undefined;
               const shouldRespond = call.direction === "inbound" || callMode === "conversation";
