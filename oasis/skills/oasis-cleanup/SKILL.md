@@ -36,14 +36,14 @@ Run code quality checks across the full OASIS stack and auto-fix what is safe.
 
 Check these OASIS-local files that are not part of the upstream repo:
 
-| File                                                                   | Check                                                     |
-| ---------------------------------------------------------------------- | --------------------------------------------------------- |
-| `docker-compose.yml`                                                   | Valid YAML, no deprecated keys, env vars exist in `.env`  |
-| `Dockerfile.oasis`                                                     | Valid Dockerfile syntax, base image not stale             |
-| `audio-listener/*.py`                                                  | Python syntax (`python3 -m py_compile`)                   |
-| `scripts/oasis-*.sh`                                                   | ShellCheck if available (`shellcheck scripts/oasis-*.sh`) |
-| `scripts/voice/*.py`                                                   | Python syntax check                                       |
-| Dashboard server (`~/.openclaw/workspace-oasis/dashboard/server/*.js`) | Node syntax check                                         |
+| File                                                                   | Check                                                           |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `docker-compose.yml`                                                   | Valid YAML, no deprecated keys, env vars exist in `.env`        |
+| `Dockerfile.oasis`                                                     | Valid Dockerfile syntax, base image not stale                   |
+| `oasis/voice/audio-listener/*.py`                                      | Python syntax (`python3 -m py_compile`)                         |
+| `oasis/scripts/oasis-*.sh`                                             | ShellCheck if available (`shellcheck oasis/scripts/oasis-*.sh`) |
+| `oasis/voice/scripts/*.py`                                             | Python syntax check                                             |
+| Dashboard server (`~/.openclaw/workspace-oasis/dashboard/server/*.js`) | Node syntax check                                               |
 
 ### Phase 3: Dead Code Detection
 

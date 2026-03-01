@@ -32,16 +32,16 @@ git rev-list --count upstream/main..HEAD 2>/dev/null   # ahead
 
 Group uncommitted changes into logical commits by category:
 
-| Category       | File Patterns                                               | Commit Prefix                           |
-| -------------- | ----------------------------------------------------------- | --------------------------------------- |
-| OASIS infra    | `docker-compose.yml`, `Dockerfile.oasis`, `scripts/oasis-*` | `ops(oasis):`                           |
-| Dashboard      | `~/.openclaw/workspace-oasis/dashboard/**`                  | `feat(dashboard):` or `fix(dashboard):` |
-| Voice pipeline | `audio-listener/**`, `scripts/voice/**`                     | `feat(voice):` or `fix(voice):`         |
-| Skills         | `skills/**`                                                 | `feat(skills):`                         |
-| Core code      | `src/**`                                                    | context-dependent                       |
-| Docs           | `docs/**`, `*.md` (non-config)                              | `docs:`                                 |
-| Config         | `.claude/**`, `AGENTS.md`, `CLAUDE.md`                      | `chore:`                                |
-| Scripts        | `scripts/**` (non-oasis)                                    | `chore(scripts):`                       |
+| Category       | File Patterns                                                     | Commit Prefix                           |
+| -------------- | ----------------------------------------------------------------- | --------------------------------------- |
+| OASIS infra    | `docker-compose.yml`, `Dockerfile.oasis`, `oasis/scripts/oasis-*` | `ops(oasis):`                           |
+| Dashboard      | `~/.openclaw/workspace-oasis/dashboard/**`                        | `feat(dashboard):` or `fix(dashboard):` |
+| Voice pipeline | `oasis/voice/audio-listener/**`, `oasis/voice/scripts/**`         | `feat(voice):` or `fix(voice):`         |
+| Skills         | `skills/**`                                                       | `feat(skills):`                         |
+| Core code      | `src/**`                                                          | context-dependent                       |
+| Docs           | `docs/**`, `*.md` (non-config)                                    | `docs:`                                 |
+| Config         | `.claude/**`, `AGENTS.md`, `CLAUDE.md`                            | `chore:`                                |
+| Scripts        | `scripts/**` (non-oasis)                                          | `chore(scripts):`                       |
 
 ### 4. Commit Creation
 

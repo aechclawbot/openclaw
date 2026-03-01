@@ -27,7 +27,7 @@ Audit and update all OASIS deployment documentation.
 
 ### Script Documentation
 
-Every script in `scripts/oasis-*` should have a header comment block.
+Every script in `oasis/scripts/oasis-*` should have a header comment block.
 
 ## Audit Workflow
 
@@ -70,7 +70,7 @@ Flag any discrepancies between docs and reality.
 
 ### 2. Verify Script Headers
 
-For each `scripts/oasis-*.sh` and `scripts/voice/*.py`:
+For each `oasis/scripts/oasis-*.sh` and `oasis/voice/scripts/*.py`:
 
 - Check that a header comment exists describing purpose, usage, dependencies
 - Verify the description matches what the script actually does

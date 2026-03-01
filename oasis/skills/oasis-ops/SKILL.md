@@ -62,7 +62,7 @@ Run `/oasis-fix` with all findings from Phase 1 and Phase 2:
 Re-run tests to confirm fixes:
 
 1. **Regression Re-run** — Run the regression suite again
-2. **Health Check** — Run `scripts/oasis-health.sh --check`
+2. **Health Check** — Run `oasis/scripts/oasis-health.sh --check`
 
 **ABORT CONDITION:** If fixes introduced new failures, roll back and report.
 

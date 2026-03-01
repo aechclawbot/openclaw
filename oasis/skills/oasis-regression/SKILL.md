@@ -29,7 +29,7 @@ Record: total tests, passed, failed, skipped, duration.
 Run the existing health script in check-only mode:
 
 ```bash
-/Users/oasis/openclaw/scripts/oasis-health.sh --check
+/Users/oasis/openclaw/oasis/scripts/oasis-health.sh --check
 ```
 
 This checks all 4 containers, gateway port, dashboard endpoint, launchd services, audio pipeline, PulseAudio, disk usage, log health, and config sanity. Exit code: 0=ok, 1=warn, 2=crit.

@@ -105,7 +105,7 @@ After applying fixes:
 
 1. Re-run the check that found the issue
 2. Run `pnpm test` if code was changed
-3. Run `scripts/oasis-health.sh --check` if infra was changed
+3. Run `oasis/scripts/oasis-health.sh --check` if infra was changed
 4. Confirm no new issues introduced
 
 ## Report
