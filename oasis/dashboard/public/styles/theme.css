@@ -1,0 +1,227 @@
+/* OASIS Dashboard — Design Tokens */
+
+:root,
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg: #0a0e17;
+  --surface: #131926;
+  --surface-2: #1a2235;
+  --surface-3: #222d42;
+
+  /* Borders */
+  --border: #2a3550;
+  --border-focus: #00d4ff;
+
+  /* Text */
+  --text: #e0e6f0;
+  --text-dim: #7a8ba8;
+  --text-muted: #4a5568;
+
+  /* Accent / Brand */
+  --accent: #00d4ff;
+  --accent-dim: rgba(0, 212, 255, 0.15);
+  --accent-hover: rgba(0, 212, 255, 0.25);
+
+  /* Status Colors */
+  --green: #22c55e;
+  --green-dim: rgba(34, 197, 94, 0.15);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.15);
+  --yellow: #eab308;
+  --yellow-dim: rgba(234, 179, 8, 0.15);
+  --orange: #f97316;
+  --orange-dim: rgba(249, 115, 22, 0.15);
+  --purple: #a855f7;
+  --purple-dim: rgba(168, 85, 247, 0.15);
+  --blue: #3b82f6;
+  --blue-dim: rgba(59, 130, 246, 0.15);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.15);
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, "Courier New", monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* Transitions */
+  --transition-fast: 100ms ease;
+  --transition: 200ms ease;
+  --transition-slow: 350ms ease;
+
+  /* Scrollbar */
+  --scrollbar-bg: var(--surface);
+  --scrollbar-thumb: var(--surface-3);
+  --scrollbar-thumb-hover: var(--border);
+
+  /* Overlay */
+  --overlay: rgba(0, 0, 0, 0.7);
+
+  /* Sidebar */
+  --sidebar-bg: var(--surface);
+  --sidebar-item-hover: var(--surface-2);
+  --sidebar-item-active: var(--accent-dim);
+  --sidebar-item-active-border: var(--accent);
+}
+
+[data-theme="light"] {
+  /* Backgrounds */
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --surface-2: #f5f8fc;
+  --surface-3: #eaeff6;
+
+  /* Borders */
+  --border: #d1dbe8;
+  --border-focus: #0099cc;
+
+  /* Text */
+  --text: #0f172a;
+  --text-dim: #475569;
+  --text-muted: #94a3b8;
+
+  /* Accent */
+  --accent: #0099cc;
+  --accent-dim: rgba(0, 153, 204, 0.12);
+  --accent-hover: rgba(0, 153, 204, 0.2);
+
+  /* Status Colors (lighter variants) */
+  --green: #16a34a;
+  --green-dim: rgba(22, 163, 74, 0.1);
+  --red: #dc2626;
+  --red-dim: rgba(220, 38, 38, 0.1);
+  --yellow: #ca8a04;
+  --yellow-dim: rgba(202, 138, 4, 0.1);
+  --orange: #ea580c;
+  --orange-dim: rgba(234, 88, 12, 0.1);
+  --purple: #9333ea;
+  --purple-dim: rgba(147, 51, 234, 0.1);
+  --blue: #2563eb;
+  --blue-dim: rgba(37, 99, 235, 0.1);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --shadow-glow: 0 0 20px rgba(0, 153, 204, 0.1);
+
+  /* Overlay */
+  --overlay: rgba(0, 0, 0, 0.4);
+
+  /* Sidebar */
+  --sidebar-bg: var(--surface);
+  --sidebar-item-hover: var(--surface-2);
+  --sidebar-item-active: var(--accent-dim);
+  --sidebar-item-active-border: var(--accent);
+}
+
+/* Base typography */
+html {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--text);
+  background-color: var(--bg);
+  transition:
+    background-color var(--transition),
+    color var(--transition);
+}
+
+/* Monospace default for code */
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+}
+
+/* Custom scrollbar — dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-full);
+  transition: background var(--transition);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--scrollbar-bg);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+}
+
+/* Focus visible — accessible keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Theme transition — applied on toggle, removed after */
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease,
+    color 300ms ease !important;
+}

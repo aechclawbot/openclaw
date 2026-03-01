@@ -1,1 +1,1 @@
-AGENTS.md
+oasis/docs/AGENTS.md

@@ -1,8 +1,8 @@
-Run the OASIS log analysis workflow. Follow the instructions in `skills/oasis-log-review/SKILL.md` exactly.
+Run the OASIS log analysis workflow. Follow the instructions in `oasis/skills/oasis-log-review/SKILL.md` exactly.
 
 Steps:
 
-1. Read `skills/oasis-log-review/SKILL.md`
+1. Read `oasis/skills/oasis-log-review/SKILL.md`
 2. Parse all host logs in `~/.openclaw/logs/` (15+ files)
 3. Check Docker container logs (`docker logs --since 1h` for each container)
 4. Review most recent agent session logs for errors

@@ -1,8 +1,8 @@
-Run the OASIS security audit. Follow the instructions in `skills/oasis-security/SKILL.md` exactly.
+Run the OASIS security audit. Follow the instructions in `oasis/skills/oasis-security/SKILL.md` exactly.
 
 Steps:
 
-1. Read `skills/oasis-security/SKILL.md`
+1. Read `oasis/skills/oasis-security/SKILL.md`
 2. Scan tracked files for exposed secrets (never print actual values — mask them)
 3. Verify Docker security (no privileged, socket proxy restrictions, resource limits)
 4. Test API authentication (dashboard rejects unauthed, gateway requires token)

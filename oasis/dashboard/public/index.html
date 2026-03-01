@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OASIS Dashboard</title>
+    <meta name="description" content="OASIS Command Center" />
+    <meta name="theme-color" content="#0a0e17" />
+
+    <!-- Design tokens & global styles -->
+    <link rel="stylesheet" href="/styles/reset.css" />
+    <link rel="stylesheet" href="/styles/theme.css" />
+    <link rel="stylesheet" href="/styles/global.css" />
+
+    <!-- App shell (Lit web components) -->
+    <script type="module" src="/components/shell/oasis-app.js"></script>
+
+    <style>
+      body {
+        background: var(--bg);
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Skip link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
+    <!-- Lit SPA root -->
+    <oasis-app></oasis-app>
+
+    <!-- Fallback loading state (hidden once Lit hydrates) -->
+    <noscript>
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0e17;color:#7a8ba8;font-family:monospace;">
+        JavaScript is required for the OASIS Dashboard.
+      </div>
+    </noscript>
+  </body>
+</html>

@@ -1,8 +1,8 @@
-Run the OASIS git sync workflow. Follow the instructions in `skills/oasis-sync/SKILL.md` exactly.
+Run the OASIS git sync workflow. Follow the instructions in `oasis/skills/oasis-sync/SKILL.md` exactly.
 
 Steps:
 
-1. Read `skills/oasis-sync/SKILL.md`
+1. Read `oasis/skills/oasis-sync/SKILL.md`
 2. Analyze working tree: `git status`, `git diff --stat`
 3. Compare against upstream: `git fetch upstream main`, count behind/ahead
 4. Group changes into logical commits by category (ops, dashboard, voice, skills, core, docs, config)
