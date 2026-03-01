@@ -28,6 +28,7 @@
     "docs/_layouts/",
     "extensions/",
     "node_modules/",
+    "oasis/dashboard/",
     "patches/",
     "pnpm-lock.yaml",
     "skills/",

@@ -102,7 +102,7 @@ services:
   # --- OASIS Dashboard ---
   oasis-dashboard:
     build:
-      context: ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard
+      context: ./oasis/dashboard
     container_name: oasis-dashboard
     user: "1000:1000"
     networks:
@@ -122,9 +122,9 @@ services:
       AUDIO_LISTENER_URL: http://audio-listener:9001
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/config
-      - ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard/server.js:/app/server.js:ro
-      - ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard/server:/app/server:ro
-      - ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard/public:/app/public:ro
+      - ./oasis/dashboard/server.js:/app/server.js:ro
+      - ./oasis/dashboard/server:/app/server:ro
+      - ./oasis/dashboard/public:/app/public:ro
       - ~/oasis-audio/done:/audio/done:ro
       - ~/oasis-audio/inbox:/audio/inbox:ro
       - ~/oasis-audio/playback:/audio/playback:ro

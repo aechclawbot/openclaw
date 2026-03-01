@@ -1,0 +1,14 @@
+{
+  "name": "oasis-dashboard-v3",
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^2.1.0",
+    "ws": "^8.18.0"
+  }
+}
