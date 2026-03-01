@@ -12,7 +12,6 @@ import {
 } from "./auth-profiles.js";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "./defaults.js";
 import {
-  FailoverError,
   coerceToFailoverError,
   describeFailoverError,
   isFailoverError,
