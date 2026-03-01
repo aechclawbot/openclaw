@@ -9,6 +9,8 @@ Usage:
     python3 migrate-curator-backlog.py              # Execute migration
     python3 migrate-curator-backlog.py --dry-run    # Preview without changes
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os

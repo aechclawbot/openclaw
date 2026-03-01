@@ -15,6 +15,8 @@ Usage:
     python3 stitch_conversations.py --dry-run      # Preview without modifying files
     python3 stitch_conversations.py --gap 180      # Custom gap threshold (seconds)
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os

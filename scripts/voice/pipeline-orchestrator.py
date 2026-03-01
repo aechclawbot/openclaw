@@ -12,6 +12,8 @@ Usage:
     python3 pipeline-orchestrator.py              # Continuous daemon
     python3 pipeline-orchestrator.py --once       # One-shot scan, then exit
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os
