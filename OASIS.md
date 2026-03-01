@@ -1,13 +1,13 @@
 # OpenClaw "Oasis" Project
 
-This file describes the local deployment of OpenClaw on the Oasis Mac Mini (2018), themed around *Ready Player One*.
+This file describes the local deployment of OpenClaw on the Oasis Mac Mini (2018), themed around _Ready Player One_.
 
 ## Architecture
 
 - **Host**: Mac Mini 2018 (16GB RAM) running Docker
 - **Deployment**: Docker Compose from this repo root (`/Users/oasis/openclaw/`)
 - **Main bot**: "Oasis" — container name `oasis`
-- **Agents**: Themed with personalities from *Ready Player One*
+- **Agents**: Themed with personalities from _Ready Player One_
 - **Agent configs**: `/Users/oasis/.openclaw/agents/` (mounted into container at `/home/node/.openclaw/agents/`)
 - **Image**: Custom `Dockerfile.oasis` extending `openclaw:local` (adds ffmpeg, Python, whisper, clawhub)
 - **Config dir**: Mounted from `${OPENCLAW_CONFIG_DIR}` → `/home/node/.openclaw` inside the container
@@ -17,15 +17,15 @@ This file describes the local deployment of OpenClaw on the Oasis Mac Mini (2018
 
 ### Agents
 
-| Agent | Role | Emoji |
-|-------|------|-------|
-| `oasis` | Main orchestrator — delegates to other agents | `🌐` |
-| `aech` | Fast technical agent / digital mechanic | `⚡` |
-| `curator` | Universal archivist / record keeper | `📚` |
-| `art3mis` | Security firewall / vetting agent | `🛡️` |
-| `ogden` | Risk and ethical advisor | `🧙` |
-| `ir0k` | Intelligence broker / deep researcher | `🕵️` |
-| `main` | Default agent | — |
+| Agent     | Role                                          | Emoji |
+| --------- | --------------------------------------------- | ----- |
+| `oasis`   | Main orchestrator — delegates to other agents | `🌐`  |
+| `aech`    | Fast technical agent / digital mechanic       | `⚡`  |
+| `curator` | Universal archivist / record keeper           | `📚`  |
+| `art3mis` | Security firewall / vetting agent             | `🛡️`  |
+| `ogden`   | Risk and ethical advisor                      | `🧙`  |
+| `ir0k`    | Intelligence broker / deep researcher         | `🕵️`  |
+| `main`    | Default agent                                 | —     |
 
 Agent data lives in `/Users/oasis/.openclaw/agents/<name>/` with subdirectories for `agent/` (config) and `sessions/` (conversation history).
 
@@ -33,10 +33,10 @@ All agents default to **Haiku 4.5** with **Gemini 2.5 Flash** fallback.
 
 ### Services
 
-| Service | Container | Purpose |
-|---------|-----------|---------|
-| `openclaw-gateway` | `oasis` | Gateway server (ports 18789, 18790), always running |
-| `openclaw-cli` | `oasis-cli` | Interactive CLI (on-demand via `docker compose run`) |
+| Service            | Container   | Purpose                                              |
+| ------------------ | ----------- | ---------------------------------------------------- |
+| `openclaw-gateway` | `oasis`     | Gateway server (ports 18789, 18790), always running  |
+| `openclaw-cli`     | `oasis-cli` | Interactive CLI (on-demand via `docker compose run`) |
 
 ### Secrets Management
 
@@ -44,22 +44,22 @@ All secrets live in `.env` (git-ignored) and are referenced in `openclaw.json` v
 
 `.env` variables:
 
-| Variable | Purpose |
-|----------|---------|
-| `OPENCLAW_IMAGE` | Docker image (default: `openclaw:oasis`) |
-| `OPENCLAW_GATEWAY_TOKEN` | Gateway auth token |
-| `OPENCLAW_CONFIG_DIR` | Host path to config directory |
-| `OPENCLAW_WORKSPACE_DIR` | Host path to workspace |
-| `OPENCLAW_GATEWAY_PORT` | Gateway port (default: 18789) |
-| `OPENCLAW_GATEWAY_BIND` | Bind mode (default: `lan`) |
-| `ANTHROPIC_API_KEY` | Anthropic API key |
-| `GEMINI_API_KEY` | Google Gemini API key |
-| `OPENAI_API_KEY` | OpenAI API key (image gen, whisper) |
-| `BRAVE_SEARCH_API_KEY` | Brave web search API key |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token |
-| `CLAUDE_AI_SESSION_KEY` | Claude web auth (optional) |
-| `CLAUDE_WEB_SESSION_KEY` | Claude web auth (optional) |
-| `CLAUDE_WEB_COOKIE` | Claude web auth (optional) |
+| Variable                 | Purpose                                  |
+| ------------------------ | ---------------------------------------- |
+| `OPENCLAW_IMAGE`         | Docker image (default: `openclaw:oasis`) |
+| `OPENCLAW_GATEWAY_TOKEN` | Gateway auth token                       |
+| `OPENCLAW_CONFIG_DIR`    | Host path to config directory            |
+| `OPENCLAW_WORKSPACE_DIR` | Host path to workspace                   |
+| `OPENCLAW_GATEWAY_PORT`  | Gateway port (default: 18789)            |
+| `OPENCLAW_GATEWAY_BIND`  | Bind mode (default: `lan`)               |
+| `ANTHROPIC_API_KEY`      | Anthropic API key                        |
+| `GEMINI_API_KEY`         | Google Gemini API key                    |
+| `OPENAI_API_KEY`         | OpenAI API key (image gen, whisper)      |
+| `BRAVE_SEARCH_API_KEY`   | Brave web search API key                 |
+| `TELEGRAM_BOT_TOKEN`     | Telegram bot token                       |
+| `CLAUDE_AI_SESSION_KEY`  | Claude web auth (optional)               |
+| `CLAUDE_WEB_SESSION_KEY` | Claude web auth (optional)               |
+| `CLAUDE_WEB_COOKIE`      | Claude web auth (optional)               |
 
 ### Production Hardening
 

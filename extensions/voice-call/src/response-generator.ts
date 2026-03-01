@@ -169,7 +169,10 @@ export async function generateVoiceResponse(
  */
 function resolveVoiceAgentId(cfg: CoreConfig, callerPhone: string): string {
   const bindings = (cfg as Record<string, unknown>).bindings as
-    | Array<{ agentId?: string; match?: { channel?: string; peer?: { kind?: string; id?: string } } }>
+    | Array<{
+        agentId?: string;
+        match?: { channel?: string; peer?: { kind?: string; id?: string } };
+      }>
     | undefined;
   if (!bindings) return "main";
 
@@ -179,14 +182,22 @@ function resolveVoiceAgentId(cfg: CoreConfig, callerPhone: string): string {
 
   // 1. Exact voice binding
   for (const b of bindings) {
-    if (b.match?.channel === "voice" && b.match.peer?.kind === "direct" && norm(b.match.peer.id ?? "") === caller) {
+    if (
+      b.match?.channel === "voice" &&
+      b.match.peer?.kind === "direct" &&
+      norm(b.match.peer.id ?? "") === caller
+    ) {
       return b.agentId ?? "main";
     }
   }
 
   // 2. Fall back to WhatsApp direct-message binding for the same number
   for (const b of bindings) {
-    if (b.match?.channel === "whatsapp" && b.match.peer?.kind === "direct" && norm(b.match.peer.id ?? "") === caller) {
+    if (
+      b.match?.channel === "whatsapp" &&
+      b.match.peer?.kind === "direct" &&
+      norm(b.match.peer.id ?? "") === caller
+    ) {
       return b.agentId ?? "main";
     }
   }
