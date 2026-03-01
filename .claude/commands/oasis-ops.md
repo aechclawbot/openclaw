@@ -1,4 +1,4 @@
-Run a full OASIS operations cycle. Follow the instructions in `skills/oasis-ops/SKILL.md` exactly.
+Run a full OASIS operations cycle. Follow the instructions in `oasis/skills/oasis-ops/SKILL.md` exactly.
 
 This orchestrates ALL other oasis skills in 6 phased execution:
 
@@ -9,7 +9,7 @@ This orchestrates ALL other oasis skills in 6 phased execution:
 **Phase 5 — Document (sequential):** Update documentation
 **Phase 6 — Commit (sequential):** Git commit changes (NEVER push without confirmation)
 
-Read `skills/oasis-ops/references/phase-dependencies.md` for the dependency graph and resource budget.
+Read `oasis/skills/oasis-ops/references/phase-dependencies.md` for the dependency graph and resource budget.
 
 Abort conditions:
 

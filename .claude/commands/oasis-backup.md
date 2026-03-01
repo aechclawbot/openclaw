@@ -1,8 +1,8 @@
-Run the OASIS backup verification workflow. Follow the instructions in `skills/oasis-backup/SKILL.md` exactly.
+Run the OASIS backup verification workflow. Follow the instructions in `oasis/skills/oasis-backup/SKILL.md` exactly.
 
 Steps:
 
-1. Read `skills/oasis-backup/SKILL.md`
+1. Read `oasis/skills/oasis-backup/SKILL.md`
 2. Verify nightly backup launchd service is loaded and ran recently
 3. Check backup log at `/tmp/openclaw-backup.log`
 4. Inventory all critical data (config, workspaces, voice profiles, .env, docker-compose)
