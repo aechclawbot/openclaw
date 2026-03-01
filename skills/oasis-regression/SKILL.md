@@ -100,8 +100,8 @@ Verify expected services are loaded:
 launchctl list | grep -E "com\.(openclaw|oasis)|org\.pulseaudio|ai\.openclaw"
 ```
 
-Expected (15):
-`com.openclaw.oasis`, `com.openclaw.backup`, `com.openclaw.weekly-update`, `com.openclaw.todo-runner`, `com.openclaw.bug-scanner`, `com.openclaw.security-scanner`, `com.openclaw.claude-todo-listener`, `com.oasis.plaud-sync`, `com.oasis.curator-manifest`, `com.oasis.health-alert`, `com.oasis.nightly-import`, `com.oasis.transcript-sync`, `org.pulseaudio`, `ai.openclaw.audio-import`, `ai.openclaw.voice-listener`
+Expected (12):
+`com.openclaw.oasis`, `com.openclaw.backup`, `com.openclaw.weekly-update`, `com.openclaw.bug-scanner`, `com.oasis.plaud-sync`, `com.oasis.curator-manifest`, `com.oasis.health-alert`, `com.oasis.nightly-import`, `com.oasis.transcript-sync`, `org.pulseaudio`, `ai.openclaw.audio-import`, `ai.openclaw.voice-listener`
 
 ### 7. Cron Job Verification
 

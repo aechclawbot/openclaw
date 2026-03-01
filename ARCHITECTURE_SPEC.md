@@ -1182,7 +1182,6 @@ scripts/oasis-weekly-update.sh
 | `~/.openclaw/voice-profiles/`                      | Enrolled speaker profiles                  |
 | `~/.openclaw/unknown-speakers/`                    | Unknown speaker candidate data             |
 | `~/.openclaw/dashboard-todos.json`                 | TODO items                                 |
-| `~/.openclaw/pending-plans.json`                   | Execution plans awaiting approval          |
 | `~/oasis-audio/inbox/`                             | WAV files awaiting transcription           |
 | `~/oasis-audio/done/`                              | Completed transcripts + .synced markers    |
 | `~/.openclaw/workspace-curator/transcripts/voice/` | Dashboard-format transcripts               |

@@ -14,23 +14,21 @@ Systematically parse all log sources and produce a prioritized findings report.
 
 Check each file (tail last 200 lines, search for errors):
 
-| File                       | Purpose                                              |
-| -------------------------- | ---------------------------------------------------- |
-| `health-alert.log`         | Container & gateway health (10m interval)            |
-| `transcript-sync.log`      | WhisperX to curator sync                             |
-| `cron.log`                 | Combined: todo-runner, bug-scanner, security-scanner |
-| `nightly-import.log`       | Audio import pipeline                                |
-| `launchd-oasis.log`        | Gateway startup                                      |
-| `commands.log`             | CLI command history                                  |
-| `config-audit.jsonl`       | Config change audit trail                            |
-| `pulseaudio.log`           | PulseAudio service                                   |
-| `pulseaudio-error.log`     | PulseAudio errors                                    |
-| `audio-import.log`         | Audio import stdout                                  |
-| `audio-import-error.log`   | Audio import stderr                                  |
-| `voice-listener.log`       | Voice listener stdout                                |
-| `voice-listener-error.log` | Voice listener stderr                                |
-| `listener-stdout.log`      | Claude todo listener stdout                          |
-| `listener-stderr.log`      | Claude todo listener stderr                          |
+| File                       | Purpose                                   |
+| -------------------------- | ----------------------------------------- |
+| `health-alert.log`         | Container & gateway health (10m interval) |
+| `transcript-sync.log`      | WhisperX to curator sync                  |
+| `cron.log`                 | Bug-scanner output                        |
+| `nightly-import.log`       | Audio import pipeline                     |
+| `launchd-oasis.log`        | Gateway startup                           |
+| `commands.log`             | CLI command history                       |
+| `config-audit.jsonl`       | Config change audit trail                 |
+| `pulseaudio.log`           | PulseAudio service                        |
+| `pulseaudio-error.log`     | PulseAudio errors                         |
+| `audio-import.log`         | Audio import stdout                       |
+| `audio-import-error.log`   | Audio import stderr                       |
+| `voice-listener.log`       | Voice listener stdout                     |
+| `voice-listener-error.log` | Voice listener stderr                     |
 
 For each:
 

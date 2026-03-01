@@ -178,26 +178,23 @@ All OASIS logs are organized across Docker containers, host system services, and
 
 ### Central Log Directory (`~/.openclaw/logs/`)
 
-| Log File                            | Purpose                                              | Source                                      |
-| ----------------------------------- | ---------------------------------------------------- | ------------------------------------------- |
-| `health-alert.log`                  | Container & gateway health monitoring (10m interval) | `com.oasis.health-alert` launchd            |
-| `transcript-sync.log`               | WhisperX → curator transcript conversion             | `com.oasis.transcript-sync` launchd         |
-| `cron.log`                          | Combined: todo-runner, bug-scanner, security-scanner | Multiple launchd services                   |
-| `nightly-import.log`                | Audio import pipeline (1:00 AM daily)                | `com.oasis.nightly-import` launchd          |
-| `launchd-oasis.log`                 | Gateway startup via launchd                          | `com.openclaw.oasis` launchd                |
-| `launchd-weekly-update.log`         | Weekly update script output                          | `com.openclaw.weekly-update` launchd        |
-| `commands.log`                      | CLI command execution history                        | OpenClaw CLI                                |
-| `config-audit.jsonl`                | Configuration change audit trail                     | OpenClaw core                               |
-| `pulseaudio.log`                    | PulseAudio service logs                              | `org.pulseaudio` launchd                    |
-| `pulseaudio-error.log`              | PulseAudio error output                              | `org.pulseaudio` launchd                    |
-| `audio-import.log`                  | Audio import stdout                                  | `ai.openclaw.audio-import` launchd          |
-| `audio-import-error.log`            | Audio import stderr                                  | `ai.openclaw.audio-import` launchd          |
-| `voice-listener.log`                | Voice listener stdout                                | `ai.openclaw.voice-listener` launchd        |
-| `voice-listener-error.log`          | Voice listener stderr                                | `ai.openclaw.voice-listener` launchd        |
-| `listener-stdout.log`               | Claude todo listener stdout                          | `com.openclaw.claude-todo-listener` launchd |
-| `listener-stderr.log`               | Claude todo listener stderr                          | `com.openclaw.claude-todo-listener` launchd |
-| `listener.log`                      | Approval listener v2 combined log                    | `com.openclaw.claude-todo-listener` launchd |
-| `weekly-update-YYYYMMDD-HHMMSS.log` | Per-run update logs (keeps last 12)                  | `scripts/oasis-weekly-update.sh`            |
+| Log File                            | Purpose                                              | Source                               |
+| ----------------------------------- | ---------------------------------------------------- | ------------------------------------ |
+| `health-alert.log`                  | Container & gateway health monitoring (10m interval) | `com.oasis.health-alert` launchd     |
+| `transcript-sync.log`               | WhisperX → curator transcript conversion             | `com.oasis.transcript-sync` launchd  |
+| `cron.log`                          | Bug-scanner output                                   | `com.openclaw.bug-scanner` launchd   |
+| `nightly-import.log`                | Audio import pipeline (1:00 AM daily)                | `com.oasis.nightly-import` launchd   |
+| `launchd-oasis.log`                 | Gateway startup via launchd                          | `com.openclaw.oasis` launchd         |
+| `launchd-weekly-update.log`         | Weekly update script output                          | `com.openclaw.weekly-update` launchd |
+| `commands.log`                      | CLI command execution history                        | OpenClaw CLI                         |
+| `config-audit.jsonl`                | Configuration change audit trail                     | OpenClaw core                        |
+| `pulseaudio.log`                    | PulseAudio service logs                              | `org.pulseaudio` launchd             |
+| `pulseaudio-error.log`              | PulseAudio error output                              | `org.pulseaudio` launchd             |
+| `audio-import.log`                  | Audio import stdout                                  | `ai.openclaw.audio-import` launchd   |
+| `audio-import-error.log`            | Audio import stderr                                  | `ai.openclaw.audio-import` launchd   |
+| `voice-listener.log`                | Voice listener stdout                                | `ai.openclaw.voice-listener` launchd |
+| `voice-listener-error.log`          | Voice listener stderr                                | `ai.openclaw.voice-listener` launchd |
+| `weekly-update-YYYYMMDD-HHMMSS.log` | Per-run update logs (keeps last 12)                  | `scripts/oasis-weekly-update.sh`     |
 
 ### Temporary Logs (`/tmp/`)
 
@@ -249,14 +246,12 @@ Per-execution JSONL logs for scheduled jobs: `clawlancer-scan`, `morning-news-br
 
 ### State Files (Not Logs, But Diagnostic)
 
-| File                                    | Purpose                           |
-| --------------------------------------- | --------------------------------- |
-| `~/.openclaw/health-alert-state.json`   | Last health check state           |
-| `~/.openclaw/nightly-import-state.json` | Audio import state                |
-| `~/.openclaw/update-check.json`         | Weekly update check state         |
-| `~/.openclaw/approval-listener.pid`     | Approval listener PID             |
-| `~/.openclaw/pending-plans.json`        | Execution plans awaiting approval |
-| `~/.openclaw/dashboard-todos.json`      | Dashboard todo list               |
+| File                                    | Purpose                   |
+| --------------------------------------- | ------------------------- |
+| `~/.openclaw/health-alert-state.json`   | Last health check state   |
+| `~/.openclaw/nightly-import-state.json` | Audio import state        |
+| `~/.openclaw/update-check.json`         | Weekly update check state |
+| `~/.openclaw/dashboard-todos.json`      | Dashboard todo list       |
 
 ### Quick Reference
 
