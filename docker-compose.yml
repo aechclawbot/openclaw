@@ -119,6 +119,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       AUDIO_DONE_DIR: /audio/done
       AUDIO_INBOX_DIR: /audio/inbox
+      AUDIO_LISTENER_URL: http://audio-listener:9001
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/config
       - ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard/server.js:/app/server.js:ro
@@ -159,6 +160,12 @@ services:
         max-file: "3"
 
   # --- Audio Listener (VAD + AssemblyAI Transcription + Speaker ID) ---
+  # Path mapping (Docker → Host):
+  #   /audio/inbox        → ~/oasis-audio/inbox         WAV files awaiting transcription
+  #   /audio/done         → ~/oasis-audio/done          Transcript JSONs + .synced markers
+  #   /voice-profiles     → ~/.openclaw/voice-profiles   Enrolled speaker embedding profiles
+  #   /unknown-speakers   → ~/.openclaw/unknown-speakers  Candidate speaker data from clustering
+  #   /app/*.py           → ./audio-listener/*.py        Source code (read-only bind mounts)
   audio-listener:
     build:
       context: ./audio-listener
@@ -200,6 +207,8 @@ services:
       NOISE_GATE_RMS: "0.03"
       QUIET_HOURS: "23-06"
       AUDIO_RETENTION_DAYS: "30"
+      MIN_TRANSCRIBE_SECONDS: "10"
+      VOICE_COMMAND_ALLOWED_SPEAKERS: "fred"
     cap_drop:
       - ALL
     security_opt:
