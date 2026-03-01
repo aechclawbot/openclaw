@@ -127,6 +127,8 @@ services:
       - ${OPENCLAW_CONFIG_DIR}/workspace-oasis/dashboard/public:/app/public:ro
       - ~/oasis-audio/done:/audio/done:ro
       - ~/oasis-audio/inbox:/audio/inbox:ro
+      - ~/oasis-audio/playback:/audio/playback:ro
+      - ~/oasis-audio/jobs.json:/audio/jobs.json:ro
     command: ["node", "server.js"]
     ports:
       - "3000:3000"
