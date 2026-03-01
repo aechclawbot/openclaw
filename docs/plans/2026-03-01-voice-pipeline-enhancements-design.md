@@ -251,7 +251,7 @@ Each candidate card renders inline audio players for its sample audio files.
 |--------|------|------|
 | POST | `/api/voice/candidates/merge` | `{ candidateIds: string[], target: { type: "new", name } \| { type: "existing", profileName } }` |
 
-Server: averages L2-normalized embeddings from selected candidates, creates or updates profile, marks candidates as merged, triggers re-identification of affected transcripts (removes `.synced` markers so `sync-transcripts.py` re-processes).
+Server: averages L2-normalized embeddings from selected candidates, creates or updates profile, marks candidates as merged, triggers re-identification of affected transcripts (removes `.synced` markers so `pipeline-orchestrator.py` re-processes).
 
 ---
 

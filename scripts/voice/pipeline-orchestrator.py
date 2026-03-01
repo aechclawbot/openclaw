@@ -8,6 +8,9 @@ Replaces sync-transcripts.py. Manages:
 - Conversation stitching
 - Orphan cleanup
 
+Runs as launchd service: com.oasis.transcript-sync (polls every 5s)
+Logs: ~/.openclaw/logs/transcript-sync.log
+
 Usage:
     python3 pipeline-orchestrator.py              # Continuous daemon
     python3 pipeline-orchestrator.py --once       # One-shot scan, then exit

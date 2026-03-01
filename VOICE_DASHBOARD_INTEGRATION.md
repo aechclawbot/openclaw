@@ -27,7 +27,7 @@ The OASIS Dashboard now includes a comprehensive **Voice Assistant** section for
 - See sample transcripts from each candidate
 - Quality indicator (variance score)
 - **Name speakers directly in the dashboard** - no CLI needed!
-- Audio playback support (coming soon)
+- Audio playback support (served from `~/oasis-audio/playback/`)
 - Approve or reject candidates with one click
 - Automatic retroactive tagging of past transcripts
 

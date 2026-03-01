@@ -182,7 +182,7 @@ All OASIS logs are organized across Docker containers, host system services, and
 | Log File                            | Purpose                                              | Source                               |
 | ----------------------------------- | ---------------------------------------------------- | ------------------------------------ |
 | `health-alert.log`                  | Container & gateway health monitoring (10m interval) | `com.oasis.health-alert` launchd     |
-| `transcript-sync.log`               | WhisperX → curator transcript conversion             | `com.oasis.transcript-sync` launchd  |
+| `transcript-sync.log`               | Pipeline orchestrator (transcript lifecycle)         | `com.oasis.transcript-sync` launchd  |
 | `cron.log`                          | Bug-scanner output                                   | `com.openclaw.bug-scanner` launchd   |
 | `nightly-import.log`                | Audio import pipeline (1:00 AM daily)                | `com.oasis.nightly-import` launchd   |
 | `launchd-oasis.log`                 | Gateway startup via launchd                          | `com.openclaw.oasis` launchd         |
@@ -196,6 +196,9 @@ All OASIS logs are organized across Docker containers, host system services, and
 | `voice-listener.log`                | Voice listener stdout                                | `ai.openclaw.voice-listener` launchd |
 | `voice-listener-error.log`          | Voice listener stderr                                | `ai.openclaw.voice-listener` launchd |
 | `weekly-update-YYYYMMDD-HHMMSS.log` | Per-run update logs (keeps last 12)                  | `scripts/oasis-weekly-update.sh`     |
+| `watch-folder.log`                  | Watch folder daemon stdout                           | `com.oasis.watch-folder` launchd     |
+| `watch-folder-error.log`            | Watch folder daemon stderr                           | `com.oasis.watch-folder` launchd     |
+| `runner.log`                        | Bug scanner runner output                            | `com.openclaw.bug-scanner` launchd   |
 
 ### Temporary Logs (`/tmp/`)
 
@@ -230,14 +233,17 @@ Per-execution JSONL logs for scheduled jobs: `clawlancer-scan`, `morning-news-br
 
 ### Audio Pipeline Data
 
-| Location                                                      | Purpose                                          |
-| ------------------------------------------------------------- | ------------------------------------------------ |
-| `~/oasis-audio/inbox/`                                        | WAV files awaiting transcription                 |
-| `~/oasis-audio/done/`                                         | Completed transcripts (JSON) + `.synced` markers |
-| `~/oasis-audio/done/.assemblyai-cost.json`                    | AssemblyAI API cost tracker                      |
-| `~/.openclaw/workspace-curator/transcripts/voice/YYYY/MM/DD/` | Dashboard-format voice transcripts               |
-| `~/.openclaw/voice-profiles/`                                 | Enrolled speaker voice profiles                  |
-| `~/.openclaw/unknown-speakers/`                               | Unidentified speaker candidates                  |
+| Location                                                      | Purpose                                               |
+| ------------------------------------------------------------- | ----------------------------------------------------- |
+| `~/oasis-audio/inbox/`                                        | WAV files awaiting transcription (ephemeral)          |
+| `~/oasis-audio/playback/`                                     | Permanent audio storage for dashboard playback        |
+| `~/oasis-audio/done/`                                         | Completed transcripts (JSON) + `.synced` markers      |
+| `~/oasis-audio/done/.assemblyai-cost.json`                    | AssemblyAI API cost tracker                           |
+| `~/oasis-audio/jobs.json`                                     | Pipeline orchestrator job queue manifest              |
+| `~/.openclaw/workspace-curator/transcripts/voice/YYYY/MM/DD/` | Dashboard-format voice transcripts (fully identified) |
+| `~/.openclaw/workspace-curator/transcripts/voice/_pending/`   | Transcripts held for speaker identification           |
+| `~/.openclaw/voice-profiles/`                                 | Enrolled speaker voice profiles                       |
+| `~/.openclaw/unknown-speakers/`                               | Unidentified speaker candidates                       |
 
 ### macOS Unified Logs
 
@@ -247,12 +253,14 @@ Per-execution JSONL logs for scheduled jobs: `clawlancer-scan`, `morning-news-br
 
 ### State Files (Not Logs, But Diagnostic)
 
-| File                                    | Purpose                   |
-| --------------------------------------- | ------------------------- |
-| `~/.openclaw/health-alert-state.json`   | Last health check state   |
-| `~/.openclaw/nightly-import-state.json` | Audio import state        |
-| `~/.openclaw/update-check.json`         | Weekly update check state |
-| `~/.openclaw/dashboard-todos.json`      | Dashboard todo list       |
+| File                                    | Purpose                      |
+| --------------------------------------- | ---------------------------- |
+| `~/.openclaw/health-alert-state.json`   | Last health check state      |
+| `~/.openclaw/nightly-import-state.json` | Audio import state           |
+| `~/.openclaw/update-check.json`         | Weekly update check state    |
+| `~/.openclaw/dashboard-todos.json`      | Dashboard todo list          |
+| `~/.openclaw/watch-folder-state.json`   | Watch folder pause/resume    |
+| `~/.openclaw/processed_audio_log.json`  | Watch folder tracking ledger |
 
 ### Quick Reference
 
@@ -265,7 +273,7 @@ docker compose logs --since 1h oasis            # Last hour
 
 # Host system logs
 tail -f ~/.openclaw/logs/health-alert.log       # Health alerts
-tail -f ~/.openclaw/logs/transcript-sync.log    # Transcript sync
+tail -f ~/.openclaw/logs/transcript-sync.log    # Pipeline orchestrator
 ls -lh ~/.openclaw/logs/                        # All log files
 
 # macOS unified logs
