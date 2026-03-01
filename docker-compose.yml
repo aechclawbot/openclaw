@@ -167,10 +167,10 @@ services:
   #   /audio/done         → ~/oasis-audio/done          Transcript JSONs + .synced markers
   #   /voice-profiles     → ~/.openclaw/voice-profiles   Enrolled speaker embedding profiles
   #   /unknown-speakers   → ~/.openclaw/unknown-speakers  Candidate speaker data from clustering
-  #   /app/*.py           → ./audio-listener/*.py        Source code (read-only bind mounts)
+  #   /app/*.py           → ./oasis/audio-listener/*.py   Source code (read-only bind mounts)
   audio-listener:
     build:
-      context: ./audio-listener
+      context: ./oasis/audio-listener
       dockerfile: Dockerfile
     container_name: audio-listener
     networks:
@@ -184,9 +184,9 @@ services:
       - ~/oasis-audio/done:/audio/done
       - ~/.openclaw/voice-profiles:/voice-profiles
       - ~/.openclaw/unknown-speakers:/unknown-speakers
-      - ./audio-listener/app.py:/app/app.py:ro
-      - ./audio-listener/speaker_verify.py:/app/speaker_verify.py:ro
-      - ./audio-listener/assemblyai_transcriber.py:/app/assemblyai_transcriber.py:ro
+      - ./oasis/audio-listener/app.py:/app/app.py:ro
+      - ./oasis/audio-listener/speaker_verify.py:/app/speaker_verify.py:ro
+      - ./oasis/audio-listener/assemblyai_transcriber.py:/app/assemblyai_transcriber.py:ro
     environment:
       TZ: America/New_York
       SAMPLE_RATE: "16000"
